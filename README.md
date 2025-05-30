@@ -1,86 +1,205 @@
-# Budget Manager
+# BudgetManager
 
-Une application web moderne pour gérer vos budgets personnels et familiaux.
+Application web responsive de gestion de budget conforme aux normes d'accessibilité AAA WCAG.
 
-## Fonctionnalités
+## 🎯 Objectif
 
-- 📊 Gestion des budgets par catégories
-- 💰 Suivi des dépenses en temps réel
-- 👥 Partage des budgets entre utilisateurs
-- 📱 Interface responsive (mobile et desktop)
-- 🔄 Synchronisation en temps réel avec Firebase
-- 🌐 Mode hors ligne disponible
+BudgetManager est une application moderne de gestion de budget qui permet aux utilisateurs de :
+- Gérer leurs budgets mensuels et annuels
+- Suivre leurs dépenses en temps réel
+- Visualiser leurs données avec des graphiques et jauges
+- Collaborer en temps réel avec d'autres utilisateurs
+- Exporter leurs données en PDF/CSV
 
-## Technologies utilisées
+## ✨ Fonctionnalités
 
-- React 18
-- TypeScript
-- Material-UI (MUI)
-- Firebase (Auth & Firestore)
-- Vite
+### 🏠 Tableau de bord
+- Vue d'ensemble des budgets et dépenses
+- Jauges dynamiques avec codes couleur
+- Tableau des budgets en cours avec progression
+- Bouton "Mois suivant" pour la gestion temporelle
 
-## Installation
+### 📊 Budgets de référence
+- Modèles de budgets réutilisables
+- Catégories prédéfinies (Courant, Mensuel, Annuel, Épargne)
+- Import/Export de modèles
+- Valeurs par défaut configurables
 
-1. Clonez le dépôt :
-```bash
-git clone https://github.com/nikulaguy/budget-manager.git
-cd budget-manager
-```
+### 📈 Historique
+- Consultation des mois précédents
+- Détail des dépenses par budget
+- Filtres et recherche avancée
+- Visualisation des tendances
 
-2. Installez les dépendances :
+### ⚙️ Paramètres
+- Gestion des comptes bancaires
+- Préférences utilisateur
+- Notifications et alertes
+- Invitations d'utilisateurs
+
+## 🎨 Design & Accessibilité
+
+- **Responsive** : Compatible desktop, tablette, mobile
+- **Accessibilité AAA** : Conforme aux normes WCAG
+- **Navigation clavier** : Totalement accessible au clavier
+- **Lecteurs d'écran** : Compatible avec les technologies d'assistance
+- **Contrastes élevés** : Couleurs conformes AAA
+- **Material Design** : Interface moderne et intuitive
+
+## 👥 Utilisateurs
+
+### Comptes prédéfinis
+- **Nicolas Guy** (Master Maître) : `nikuland@gmail.com`
+- **Romain Troalen** (Master) : `romain.troalen@gmail.com`
+- **Guillaume Marion** (Master) : `guillaume.marion.perso@gmail.com`
+- **Rémi Roux** (Master) : `remi.roux@gmail.com`
+- **Alix Guy** (Simple) : `alix.troalen@gmail.com`
+
+### Rôles et permissions
+- **Master Maître** : Peut inviter des comptes maîtres
+- **Master** : Peut inviter des utilisateurs simples
+- **Simple** : Utilisation standard de l'application
+
+### Partage de foyer
+- **Nicolas Guy** et **Alix Guy** partagent le même foyer
+- Toutes les modifications sont synchronisées entre leurs comptes
+- Ils voient les mêmes budgets et dépenses en temps réel
+
+## 🚀 Installation
+
+### Prérequis
+- Node.js >= 18.0.0
+- npm ou yarn
+
+### Installation des dépendances
 ```bash
 npm install
 ```
 
-3. Créez un fichier `.env` à la racine du projet avec vos identifiants Firebase :
+### Configuration Firebase
+Créez un fichier `.env.local` à la racine du projet avec vos clés Firebase :
+
 ```env
-VITE_FIREBASE_API_KEY=votre_api_key
-VITE_FIREBASE_AUTH_DOMAIN=votre_auth_domain
-VITE_FIREBASE_PROJECT_ID=votre_project_id
-VITE_FIREBASE_STORAGE_BUCKET=votre_storage_bucket
-VITE_FIREBASE_MESSAGING_SENDER_ID=votre_messaging_sender_id
-VITE_FIREBASE_APP_ID=votre_app_id
+VITE_FIREBASE_API_KEY=your-api-key
+VITE_FIREBASE_AUTH_DOMAIN=your-auth-domain
+VITE_FIREBASE_PROJECT_ID=your-project-id
+VITE_FIREBASE_STORAGE_BUCKET=your-storage-bucket
+VITE_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
+VITE_FIREBASE_APP_ID=your-app-id
 ```
 
-4. Lancez l'application en mode développement :
+### Démarrage en développement
 ```bash
 npm run dev
 ```
 
-## Scripts disponibles
+L'application sera accessible sur `http://localhost:3000`
 
-- `npm run dev` : Lance l'application en mode développement
-- `npm run build` : Compile l'application pour la production
-- `npm run preview` : Prévisualise la version de production en local
-- `npm run lint` : Vérifie le code avec ESLint
-- `npm run typecheck` : Vérifie les types TypeScript
-- `npm run format` : Formate le code avec Prettier
+### Build de production
+```bash
+npm run build
+```
 
-## Déploiement
+### Aperçu de la production
+```bash
+npm run preview
+```
 
-L'application est automatiquement déployée sur GitHub Pages à chaque push sur la branche main.
+## 🛠️ Technologies
 
-URL de production : https://nikulaguy.github.io/budget-manager/
+### Frontend
+- **React 18** avec TypeScript
+- **Material-UI v5** pour l'interface
+- **React Router** pour la navigation
+- **React Hook Form** + Yup pour les formulaires
+- **React Query** pour la gestion des données
+- **Date-fns** pour la manipulation des dates
+- **Recharts** pour les graphiques
 
-## Structure du projet
+### Backend & Base de données
+- **Firebase** pour l'authentification et la base de données
+- **Firestore** pour le stockage des données
+- **Firebase Auth** pour la gestion des utilisateurs
+
+### Outils de développement
+- **Vite** pour le bundling
+- **ESLint** pour le linting
+- **TypeScript** pour le typage statique
+- **PWA** support avec Vite PWA plugin
+
+## 📁 Structure du projet
 
 ```
 src/
-  ├── components/     # Composants React
-  ├── types/         # Types TypeScript
-  ├── utils/         # Utilitaires et services
-  ├── theme/         # Configuration du thème MUI
-  └── App.tsx        # Point d'entrée de l'application
+├── components/          # Composants réutilisables
+│   ├── Layout/         # Layout principal
+│   └── common/         # Composants communs
+├── contexts/           # Contextes React
+├── pages/              # Pages de l'application
+├── types/              # Types TypeScript
+├── theme/              # Configuration du thème
+├── config/             # Configuration (Firebase, etc.)
+└── main.tsx           # Point d'entrée
 ```
 
-## Contribution
+## 🔧 Configuration
 
+### Firebase Setup
+1. Créez un projet Firebase sur https://console.firebase.google.com
+2. Activez Authentication (Email/Password)
+3. Activez Firestore Database
+4. Copiez les clés de configuration dans `.env.local`
+5. Configurez les règles de sécurité Firestore
+
+### Règles Firestore recommandées
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Utilisateurs peuvent lire/écrire leurs propres données
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Budgets et dépenses accessibles aux utilisateurs authentifiés
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
+```
+
+## 📱 PWA Support
+
+L'application est configurée comme une Progressive Web App :
+- Installation sur mobile/desktop
+- Fonctionnement hors-ligne
+- Notifications push
+- Mise à jour automatique
+
+## 🧪 Tests
+
+```bash
+# Linting
+npm run lint
+
+# Type checking
+npm run type-check
+```
+
+## 📄 Licence
+
+Ce projet est sous licence MIT.
+
+## 🤝 Contribution
+
+Les contributions sont les bienvenues ! Veuillez :
 1. Fork le projet
-2. Créez votre branche de fonctionnalité (`git checkout -b feature/AmazingFeature`)
-3. Committez vos changements (`git commit -m 'Add some AmazingFeature'`)
-4. Push sur la branche (`git push origin feature/AmazingFeature`)
-5. Ouvrez une Pull Request
+2. Créer une branche feature
+3. Commiter vos changements
+4. Pousser vers la branche
+5. Ouvrir une Pull Request
 
-## Licence
+## 📞 Support
 
-MIT
+Pour toute question ou problème, veuillez ouvrir une issue sur GitHub. 
