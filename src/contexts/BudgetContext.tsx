@@ -1,5 +1,7 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react'
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react'
 import { defaultReferenceBudgets } from '../data/referenceBudgets'
+import { githubStorage, configureGitHubToken, AppData } from '../services/githubStorage'
+import { toastWithClose } from '../utils/toast'
 
 // Fonction utilitaire pour arrondir les nombres et éviter les problèmes de précision
 const roundToTwo = (num: number): number => {
@@ -48,6 +50,10 @@ interface BudgetContextType {
   deleteExpense: (budgetName: string, expenseId: string) => void
   resetBudget: (budgetName: string) => void
   resetAllBudgets: () => void
+  // Fonctions pour la synchronisation GitHub
+  loadFromGitHub: () => Promise<void>
+  saveToGitHub: () => Promise<void>
+  isLoading: boolean
 }
 
 const BudgetContext = createContext<BudgetContextType | undefined>(undefined)
@@ -67,6 +73,7 @@ interface BudgetProviderProps {
 export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
   const [currentMonth, setCurrentMonth] = useState<number>(new Date().getMonth() + 1)
   const [currentYear, setCurrentYear] = useState<number>(new Date().getFullYear())
+  const [isLoading, setIsLoading] = useState(false)
   
   // États pour les modales globales
   const [globalAddExpenseOpen, setGlobalAddExpenseOpen] = useState(false)
@@ -92,6 +99,83 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
 
   // Données des dépenses - complètement vides (aucun historique)
   const [budgetExpenses, setBudgetExpenses] = useState<Record<string, Expense[]>>({})
+
+  // Configuration du token GitHub au démarrage
+  useEffect(() => {
+    // Pour la démo, on utilise un token GitHub personnalisé
+    // IMPORTANT: En production, ce token devrait être configuré via des variables d'environnement
+    const token = import.meta.env.VITE_GITHUB_TOKEN || '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'
+    configureGitHubToken(token)
+  }, [])
+
+  // Chargement automatique des données au démarrage
+  useEffect(() => {
+    loadFromGitHub()
+  }, [])
+
+  const loadFromGitHub = async () => {
+    setIsLoading(true)
+    try {
+      const data = await githubStorage.loadData()
+      if (data) {
+        // Reconstruire les budgets avec les données sauvegardées
+        if (data.budgets) {
+          setMonthlyBudgets(data.budgets)
+        }
+        
+        // Reconstruire les dépenses avec les bonnes dates
+        if (data.expenses) {
+          const reconstructedExpenses: Record<string, Expense[]> = {}
+          for (const [budgetName, expenses] of Object.entries(data.expenses)) {
+            reconstructedExpenses[budgetName] = expenses.map(expense => ({
+              ...expense,
+              date: new Date(expense.date) // Reconvertir les dates
+            }))
+          }
+          setBudgetExpenses(reconstructedExpenses)
+        }
+        
+        toastWithClose.success('Données chargées depuis GitHub')
+      }
+    } catch (error) {
+      console.error('Erreur lors du chargement:', error)
+      toastWithClose.error('Erreur lors du chargement des données')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const saveToGitHub = async () => {
+    setIsLoading(true)
+    try {
+      const data: AppData = {
+        budgets: monthlyBudgets,
+        expenses: budgetExpenses,
+        users: {}, // Pour l'instant, on ne sauvegarde pas les utilisateurs
+        lastUpdated: new Date().toISOString()
+      }
+      
+      const success = await githubStorage.saveData(data)
+      if (success) {
+        toastWithClose.success('Données sauvegardées sur GitHub')
+      } else {
+        toastWithClose.error('Erreur lors de la sauvegarde')
+      }
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde:', error)
+      toastWithClose.error('Erreur lors de la sauvegarde des données')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Sauvegarde automatique après chaque modification
+  const autoSave = async () => {
+    // Attendre un peu pour grouper les modifications
+    setTimeout(() => {
+      saveToGitHub()
+    }, 1000)
+  }
 
   const openAddExpenseDialog = (budgetName?: string) => {
     setSelectedBudgetForExpense(budgetName || null)
@@ -143,6 +227,9 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
         return budget
       })
     )
+
+    // Sauvegarde automatique
+    autoSave()
   }
 
   const deleteExpense = (budgetName: string, expenseId: string) => {
@@ -174,6 +261,9 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
       })
     )
 
+    // Sauvegarde automatique
+    autoSave()
+
     return expense
   }
 
@@ -198,6 +288,9 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
         return budget
       })
     )
+
+    // Sauvegarde automatique
+    autoSave()
   }
 
   const resetAllBudgets = () => {
@@ -213,6 +306,9 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
         percentage: 0
       }))
     )
+
+    // Sauvegarde automatique
+    autoSave()
   }
 
   const value: BudgetContextType = {
@@ -233,7 +329,10 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
     addExpense,
     deleteExpense,
     resetBudget,
-    resetAllBudgets
+    resetAllBudgets,
+    loadFromGitHub,
+    saveToGitHub,
+    isLoading
   }
 
   return (

@@ -81,11 +81,17 @@ const HomePage: React.FC = () => {
   const [showAddExpenseDialog, setShowAddExpenseDialog] = useState(false)
   const [showViewExpensesDialog, setShowViewExpensesDialog] = useState(false)
   const [showResetBudgetDialog, setShowResetBudgetDialog] = useState(false)
-  const [expenseForm, setExpenseForm] = useState({
-    description: '',
-    amount: '',
-    date: new Date().toISOString().split('T')[0], // Date du jour au format YYYY-MM-DD
-    budgetName: '' // Nouveau champ pour la sélection de budget
+  const [expenseForm, setExpenseForm] = useState(() => {
+    const today = new Date()
+    const todayString = today.getFullYear() + '-' + 
+                       String(today.getMonth() + 1).padStart(2, '0') + '-' + 
+                       String(today.getDate()).padStart(2, '0')
+    return {
+      description: '',
+      amount: '',
+      date: todayString, // Date du jour au format YYYY-MM-DD garanti
+      budgetName: '' // Nouveau champ pour la sélection de budget
+    }
   })
 
   // Date actuelle pour affichage
@@ -163,10 +169,15 @@ const HomePage: React.FC = () => {
   const handleAddExpense = (budgetName: string, fromMenu: boolean = false) => {
     setSelectedBudget(budgetName)
     // Réinitialiser le formulaire avec la date du jour et le budget sélectionné
+    const today = new Date()
+    const todayString = today.getFullYear() + '-' + 
+                       String(today.getMonth() + 1).padStart(2, '0') + '-' + 
+                       String(today.getDate()).padStart(2, '0')
+    
     setExpenseForm({
       description: '',
       amount: '',
-      date: new Date().toISOString().split('T')[0],
+      date: todayString,
       budgetName: budgetName
     })
     setShowAddExpenseDialog(true)
@@ -198,10 +209,15 @@ const HomePage: React.FC = () => {
   // Gestion des dialogues globaux (depuis le SpeedDial)
   useEffect(() => {
     if (globalAddExpenseOpen) {
+      const today = new Date()
+      const todayString = today.getFullYear() + '-' + 
+                         String(today.getMonth() + 1).padStart(2, '0') + '-' + 
+                         String(today.getDate()).padStart(2, '0')
+      
       setExpenseForm({
         description: '',
         amount: '',
-        date: new Date().toISOString().split('T')[0],
+        date: todayString,
         budgetName: selectedBudgetForExpense || ''
       })
     }
@@ -210,8 +226,29 @@ const HomePage: React.FC = () => {
   const handleSaveExpense = () => {
     const budgetName = globalAddExpenseOpen ? expenseForm.budgetName : selectedBudget
     
-    if (!expenseForm.description || !expenseForm.amount || !expenseForm.date || !budgetName) {
-      toastWithClose.error('Veuillez remplir tous les champs')
+    // Validation améliorée avec logs pour déboguer
+    console.log('Validation du formulaire:', {
+      description: expenseForm.description,
+      amount: expenseForm.amount,
+      date: expenseForm.date,
+      budgetName: budgetName
+    })
+
+    // Vérification plus stricte des champs
+    const isDescriptionValid = expenseForm.description && expenseForm.description.trim().length > 0
+    const isAmountValid = expenseForm.amount && !isNaN(parseFloat(expenseForm.amount)) && parseFloat(expenseForm.amount) > 0
+    const isDateValid = expenseForm.date && expenseForm.date.length === 10 // Format YYYY-MM-DD
+    const isBudgetValid = budgetName && budgetName.trim().length > 0
+
+    if (!isDescriptionValid || !isAmountValid || !isDateValid || !isBudgetValid) {
+      const errors = []
+      if (!isDescriptionValid) errors.push('Description manquante')
+      if (!isAmountValid) errors.push('Montant invalide')
+      if (!isDateValid) errors.push('Date invalide')
+      if (!isBudgetValid) errors.push('Budget non sélectionné')
+      
+      console.error('Erreurs de validation:', errors)
+      toastWithClose.error(`Erreur: ${errors.join(', ')}`)
       return
     }
 
@@ -219,7 +256,7 @@ const HomePage: React.FC = () => {
     
     // Ajouter la dépense à la liste
     const newExpense = {
-      description: expenseForm.description,
+      description: expenseForm.description.trim(),
       amount: amount,
       date: new Date(expenseForm.date), // Utiliser la date du formulaire
       category: monthlyBudgets.find(b => b.name === budgetName)?.category || 'Courant',
@@ -230,10 +267,17 @@ const HomePage: React.FC = () => {
     addExpense(budgetName, newExpense)
     
     toastWithClose.success(`Dépense de ${amount}€ ajoutée pour ${budgetName}`)
+    
+    // Réinitialiser le formulaire avec une date valide
+    const today = new Date()
+    const todayString = today.getFullYear() + '-' + 
+                       String(today.getMonth() + 1).padStart(2, '0') + '-' + 
+                       String(today.getDate()).padStart(2, '0')
+    
     setExpenseForm({ 
       description: '', 
       amount: '', 
-      date: new Date().toISOString().split('T')[0], // Réinitialiser avec la date du jour
+      date: todayString, // Format YYYY-MM-DD garanti
       budgetName: ''
     })
     

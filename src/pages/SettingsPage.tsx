@@ -26,7 +26,8 @@ import {
   Switch,
   Chip,
   Paper,
-  Alert
+  Alert,
+  CircularProgress
 } from '@mui/material'
 import {
   Person,
@@ -44,13 +45,16 @@ import {
   Upload,
   AccountBalance,
   Euro,
-  Settings
+  Settings,
+  CloudUpload,
+  CloudDownload
 } from '@mui/icons-material'
 import { toastWithClose } from '../utils/toast'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
 import { useAuth } from '../contexts/AuthContext'
+import { useBudget } from '../contexts/BudgetContext'
 import { UserInvitation } from '../types'
 import { defaultReferenceBudgets, defaultCategories } from '../data/referenceBudgets'
 
@@ -78,6 +82,12 @@ const SettingsPage: React.FC = () => {
     getPendingInvitations, 
     cancelInvitation 
   } = useAuth()
+  
+  const { 
+    saveToGitHub, 
+    loadFromGitHub, 
+    isLoading 
+  } = useBudget()
   
   // États des paramètres (maintenant persistants dans localStorage)
   const [notifications, setNotifications] = useState(() => 
@@ -137,6 +147,15 @@ const SettingsPage: React.FC = () => {
       case 'simple': return 'default'
       default: return 'default'
     }
+  }
+
+  // Fonctions de synchronisation GitHub
+  const handleSaveToGitHub = async () => {
+    await saveToGitHub()
+  }
+
+  const handleLoadFromGitHub = async () => {
+    await loadFromGitHub()
   }
 
   // Sauvegarder les préférences dans localStorage
@@ -689,6 +708,50 @@ const SettingsPage: React.FC = () => {
                     secondary="Télécharger toutes vos données au format JSON"
                   />
                 </ListItem>
+
+                <Divider />
+
+                {/* Section Synchronisation GitHub */}
+                <ListItem>
+                  <ListItemText
+                    primary={
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <CloudUpload color="primary" />
+                        <Typography variant="body1" fontWeight="medium">
+                          Synchronisation en ligne
+                        </Typography>
+                      </Box>
+                    }
+                    secondary="Sauvegardez vos données sur GitHub pour y accéder depuis n'importe quel appareil"
+                  />
+                </ListItem>
+
+                <ListItem>
+                  <Box sx={{ display: 'flex', gap: 1, width: '100%' }}>
+                    <Button
+                      variant="outlined"
+                      startIcon={isLoading ? <CircularProgress size={16} /> : <CloudUpload />}
+                      onClick={handleSaveToGitHub}
+                      disabled={isLoading}
+                      size="small"
+                      sx={{ flex: 1 }}
+                    >
+                      {isLoading ? 'Sauvegarde...' : 'Sauvegarder'}
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      startIcon={isLoading ? <CircularProgress size={16} /> : <CloudDownload />}
+                      onClick={handleLoadFromGitHub}
+                      disabled={isLoading}
+                      size="small"
+                      sx={{ flex: 1 }}
+                    >
+                      {isLoading ? 'Chargement...' : 'Charger'}
+                    </Button>
+                  </Box>
+                </ListItem>
+
+                <Divider />
 
                 <ListItem button>
                   <ListItemIcon>

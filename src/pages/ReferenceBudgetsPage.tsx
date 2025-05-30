@@ -25,20 +25,26 @@ import {
   FormControl,
   InputLabel,
   Select,
-  MenuItem
+  MenuItem,
+  useTheme,
+  useMediaQuery,
+  Menu
 } from '@mui/material'
 import {
   Add,
   Edit,
   Delete,
   ExpandMore,
-  Euro
+  Euro,
+  MoreVert
 } from '@mui/icons-material'
 import { toastWithClose } from '../utils/toast'
 
 import { defaultReferenceBudgets, defaultCategories, calculateTotalsByCategory } from '../data/referenceBudgets'
 
 const ReferenceBudgetsPage: React.FC = () => {
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
@@ -54,6 +60,7 @@ const ReferenceBudgetsPage: React.FC = () => {
     amount: '', 
     category: 'Courant' 
   })
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
 
   // Grouper les budgets par catégorie
   const budgetsByCategory = referenceBudgets.reduce((acc, budget) => {
@@ -80,7 +87,7 @@ const ReferenceBudgetsPage: React.FC = () => {
     setShowAddDialog(true)
   }
 
-  const handleEditBudget = (budgetName: string) => {
+  const handleEditBudget = (budgetName: string, fromMenu: boolean = false) => {
     const budget = referenceBudgets.find(b => b.name === budgetName)
     if (budget) {
       setEditBudget({
@@ -90,12 +97,24 @@ const ReferenceBudgetsPage: React.FC = () => {
       })
       setSelectedBudget(budgetName)
       setShowEditDialog(true)
+      if (fromMenu) handleCloseMenu()
     }
   }
 
-  const handleDeleteBudget = (budgetName: string) => {
+  const handleDeleteBudget = (budgetName: string, fromMenu: boolean = false) => {
     setSelectedBudget(budgetName)
     setShowDeleteDialog(true)
+    if (fromMenu) handleCloseMenu()
+  }
+
+  const handleOpenMenu = (event: React.MouseEvent<HTMLButtonElement>, budgetName: string) => {
+    setAnchorEl(event.currentTarget)
+    setSelectedBudget(budgetName)
+  }
+
+  const handleCloseMenu = () => {
+    setAnchorEl(null)
+    setSelectedBudget(null)
   }
 
   const confirmDeleteBudget = () => {
@@ -177,7 +196,11 @@ const ReferenceBudgetsPage: React.FC = () => {
           <Typography variant="h4" component="h1" gutterBottom>
             Budgets de référence
           </Typography>
-          <Typography variant="body1" color="textSecondary">
+          <Typography 
+            variant="body1" 
+            color="textSecondary"
+            sx={{ fontSize: isMobile ? '0.9rem' : undefined }}
+          >
             Gérez vos modèles de budgets pour chaque catégorie de dépenses
           </Typography>
         </Box>
@@ -186,15 +209,20 @@ const ReferenceBudgetsPage: React.FC = () => {
           startIcon={<Add />}
           onClick={handleAddBudget}
           aria-label="Ajouter un nouveau budget de référence"
+          size={isMobile ? "small" : "medium"}
         >
-          Nouveau budget
+          {isMobile ? "Nouveau" : "Nouveau budget"}
         </Button>
       </Box>
 
       {/* Résumé par catégorie */}
       <Card sx={{ mb: 4 }}>
         <CardContent>
-          <Typography variant="h6" gutterBottom>
+          <Typography 
+            variant="h6" 
+            gutterBottom
+            sx={{ fontSize: isMobile ? '1rem' : undefined }}
+          >
             Résumé par catégorie
           </Typography>
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
@@ -204,8 +232,14 @@ const ReferenceBudgetsPage: React.FC = () => {
                 label={`${category}: ${formatCurrency(total)}`}
                 color={getCategoryColor(category) as any}
                 variant="outlined"
-                size="medium"
+                size={isMobile ? "small" : "medium"}
                 icon={<Euro />}
+                sx={{ 
+                  fontSize: isMobile ? '0.8rem' : undefined,
+                  '& .MuiChip-label': {
+                    fontSize: isMobile ? '0.8rem' : undefined
+                  }
+                }}
               />
             ))}
           </Box>
@@ -226,7 +260,13 @@ const ReferenceBudgetsPage: React.FC = () => {
                 id={`${category.name}-header`}
               >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
-                  <Typography variant="h6" sx={{ flexGrow: 1 }}>
+                  <Typography 
+                    variant="h6" 
+                    sx={{ 
+                      flexGrow: 1,
+                      fontSize: isMobile ? '1rem' : undefined
+                    }}
+                  >
                     {category.name}
                   </Typography>
                   <Chip
@@ -234,74 +274,141 @@ const ReferenceBudgetsPage: React.FC = () => {
                     size="small"
                     color={getCategoryColor(category.name) as any}
                   />
-                  <Typography variant="body2" color="textSecondary">
+                  <Typography 
+                    variant="body2" 
+                    color="textSecondary"
+                    sx={{ fontSize: isMobile ? '0.8rem' : undefined }}
+                  >
                     Total: {formatCurrency(categoryTotal)}
                   </Typography>
                 </Box>
               </AccordionSummary>
               <AccordionDetails>
                 {categoryBudgets.length > 0 ? (
-                  <TableContainer component={Paper} variant="outlined">
-                    <Table>
-                      <TableHead>
-                        <TableRow>
-                          <TableCell sx={{ width: '40%' }}>Nom du budget</TableCell>
-                          <TableCell align="right" sx={{ width: '20%' }}>Montant</TableCell>
-                          <TableCell align="center" sx={{ width: '20%' }}>Type</TableCell>
-                          <TableCell align="center" sx={{ width: '20%' }}>Actions</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {categoryBudgets.map((budget, index) => (
-                          <TableRow key={`${budget.name}-${index}`} hover>
-                            <TableCell sx={{ width: '40%' }}>
-                              <Typography variant="body2" fontWeight="medium">
-                                {budget.name}
-                              </Typography>
-                            </TableCell>
-                            <TableCell align="right" sx={{ width: '20%' }}>
-                              <Typography variant="body2" fontWeight="medium">
-                                {formatCurrency(budget.value)}
-                              </Typography>
-                            </TableCell>
-                            <TableCell align="center" sx={{ width: '20%' }}>
-                              <Chip
-                                label={budget.isDefault ? 'Par défaut' : 'Personnalisé'}
-                                size="small"
-                                color={budget.isDefault ? 'default' : 'primary'}
-                                variant={budget.isDefault ? 'outlined' : 'filled'}
-                              />
-                            </TableCell>
-                            <TableCell align="center" sx={{ width: '20%' }}>
-                              <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
-                                <IconButton
+                  !isMobile ? (
+                    /* Affichage desktop en tableau */
+                    <TableContainer component={Paper} variant="outlined">
+                      <Table>
+                        <TableHead>
+                          <TableRow>
+                            <TableCell sx={{ width: '40%' }}>Nom du budget</TableCell>
+                            <TableCell align="right" sx={{ width: '20%' }}>Montant</TableCell>
+                            <TableCell align="center" sx={{ width: '20%' }}>Type</TableCell>
+                            <TableCell align="center" sx={{ width: '20%' }}>Actions</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {categoryBudgets.map((budget, index) => (
+                            <TableRow key={`${budget.name}-${index}`} hover>
+                              <TableCell sx={{ width: '40%' }}>
+                                <Typography variant="body2" fontWeight="medium">
+                                  {budget.name}
+                                </Typography>
+                              </TableCell>
+                              <TableCell align="right" sx={{ width: '20%' }}>
+                                <Typography variant="body2" fontWeight="medium">
+                                  {formatCurrency(budget.value)}
+                                </Typography>
+                              </TableCell>
+                              <TableCell align="center" sx={{ width: '20%' }}>
+                                <Chip
+                                  label={budget.isDefault ? 'Par défaut' : 'Personnalisé'}
                                   size="small"
-                                  onClick={() => handleEditBudget(budget.name)}
-                                  aria-label={`Éditer ${budget.name}`}
-                                  color="primary"
-                                >
-                                  <Edit />
-                                </IconButton>
-                                {!budget.isDefault && (
+                                  color={budget.isDefault ? 'default' : 'primary'}
+                                  variant={budget.isDefault ? 'outlined' : 'filled'}
+                                />
+                              </TableCell>
+                              <TableCell align="center" sx={{ width: '20%' }}>
+                                <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
                                   <IconButton
                                     size="small"
-                                    onClick={() => handleDeleteBudget(budget.name)}
-                                    aria-label={`Supprimer ${budget.name}`}
-                                    color="error"
+                                    onClick={() => handleEditBudget(budget.name)}
+                                    aria-label={`Éditer ${budget.name}`}
+                                    color="primary"
                                   >
-                                    <Delete />
+                                    <Edit />
                                   </IconButton>
-                                )}
-                              </Box>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
+                                  {!budget.isDefault && (
+                                    <IconButton
+                                      size="small"
+                                      onClick={() => handleDeleteBudget(budget.name)}
+                                      aria-label={`Supprimer ${budget.name}`}
+                                      color="error"
+                                    >
+                                      <Delete />
+                                    </IconButton>
+                                  )}
+                                </Box>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  ) : (
+                    /* Affichage mobile en cartes */
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      {categoryBudgets.map((budget, index) => (
+                        <Paper key={`${budget.name}-${index}`} sx={{ p: 2 }} elevation={2}>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                            <Box sx={{ flex: 1, minWidth: 0 }}>
+                              <Typography 
+                                variant="body1" 
+                                fontWeight="medium"
+                                sx={{ 
+                                  fontSize: '1rem',
+                                  lineHeight: 1.3,
+                                  mb: 0.5,
+                                  wordBreak: 'break-word'
+                                }}
+                              >
+                                {budget.name}
+                              </Typography>
+                              <Typography 
+                                variant="body2" 
+                                color="textSecondary"
+                                sx={{ fontSize: '0.875rem' }}
+                              >
+                                Montant: {formatCurrency(budget.value)}
+                              </Typography>
+                            </Box>
+                            <IconButton
+                              size="medium"
+                              onClick={(event) => handleOpenMenu(event, budget.name)}
+                              aria-label={`Actions pour ${budget.name}`}
+                              sx={{ ml: 1 }}
+                            >
+                              <MoreVert />
+                            </IconButton>
+                          </Box>
+                          
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Chip
+                              label={budget.isDefault ? 'Par défaut' : 'Personnalisé'}
+                              size="medium"
+                              color={budget.isDefault ? 'default' : 'primary'}
+                              variant={budget.isDefault ? 'outlined' : 'filled'}
+                              sx={{ fontSize: '0.875rem' }}
+                            />
+                            <Typography
+                              variant="h6"
+                              color="primary"
+                              sx={{ fontSize: '1.1rem', fontWeight: 'bold' }}
+                            >
+                              {formatCurrency(budget.value)}
+                            </Typography>
+                          </Box>
+                        </Paper>
+                      ))}
+                    </Box>
+                  )
                 ) : (
                   <Box sx={{ p: 3, textAlign: 'center' }}>
-                    <Typography variant="body2" color="textSecondary">
+                    <Typography 
+                      variant="body2" 
+                      color="textSecondary"
+                      sx={{ fontSize: isMobile ? '0.9rem' : undefined }}
+                    >
                       Aucun budget dans cette catégorie
                     </Typography>
                     <Button
@@ -309,6 +416,7 @@ const ReferenceBudgetsPage: React.FC = () => {
                       startIcon={<Add />}
                       onClick={handleAddBudget}
                       sx={{ mt: 2 }}
+                      size={isMobile ? "small" : "medium"}
                     >
                       Ajouter un budget
                     </Button>
@@ -472,6 +580,33 @@ const ReferenceBudgetsPage: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Menu contextuel */}
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleCloseMenu}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'right',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
+      >
+        <MenuItem onClick={() => selectedBudget && handleEditBudget(selectedBudget, true)}>
+          <Edit sx={{ mr: 1 }} fontSize="small" />
+          Éditer
+        </MenuItem>
+        {/* Afficher supprimer seulement si ce n'est pas un budget par défaut */}
+        {selectedBudget && !referenceBudgets.find(b => b.name === selectedBudget)?.isDefault && (
+          <MenuItem onClick={() => selectedBudget && handleDeleteBudget(selectedBudget, true)}>
+            <Delete sx={{ mr: 1 }} fontSize="small" />
+            Supprimer
+          </MenuItem>
+        )}
+      </Menu>
     </Box>
   )
 }
