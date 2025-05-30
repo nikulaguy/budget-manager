@@ -10,7 +10,15 @@ export default defineConfig(({ command }) => ({
   base: './',
   build: {
     outDir: 'dist',
-    sourcemap: true
+    sourcemap: true,
+    rollupOptions: {
+      output: {
+        // Noms de fichiers plus propres pour éviter les problèmes MIME
+        entryFileNames: 'assets/[name].js',
+        chunkFileNames: 'assets/[name].js',
+        assetFileNames: 'assets/[name].[ext]'
+      }
+    }
   },
   server: {
     port: 3000
