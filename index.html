@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="BudgetManager - Application de gestion de budget responsive et accessible" />
     <meta name="theme-color" content="#1976d2" />
-    <title>BudgetManager</title>
+    <title>BudgetManager - Test</title>
     
     <!-- Accessibility -->
     <meta name="color-scheme" content="light dark" />
@@ -20,9 +20,73 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    
+    <style>
+      body {
+        font-family: 'Roboto', sans-serif;
+        margin: 0;
+        padding: 20px;
+        background: linear-gradient(135deg, #1976d2, #42a5f5);
+        color: white;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+      }
+      .container {
+        max-width: 600px;
+        padding: 40px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+      }
+      h1 {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        font-weight: 300;
+      }
+      .euro-icon {
+        font-size: 4rem;
+        color: #ffeb3b;
+        margin-bottom: 2rem;
+      }
+      p {
+        font-size: 1.2rem;
+        margin-bottom: 2rem;
+      }
+      .status {
+        background: rgba(76, 175, 80, 0.2);
+        padding: 15px;
+        border-radius: 10px;
+        border-left: 4px solid #4caf50;
+        margin: 20px 0;
+      }
+    </style>
   </head>
   <body>
-    <div id="root" role="application" aria-label="BudgetManager Application"></div>
-    <script type="module" src="./src/main.tsx"></script>
+    <div class="container">
+      <div class="euro-icon">€</div>
+      <h1>BudgetManager</h1>
+      <p>Application de gestion de budget moderne et accessible</p>
+      
+      <div class="status">
+        <strong>✅ Déploiement réussi!</strong><br>
+        Les corrections pour GitHub Pages ont été appliquées avec succès.
+      </div>
+      
+      <p>
+        <strong>Corrections appliquées :</strong><br>
+        • Fichier .nojekyll ajouté<br>
+        • Chemins relatifs configurés<br>
+        • Manifest PWA corrigé<br>
+        • Noms de fichiers simplifiés
+      </p>
+      
+      <p style="font-size: 0.9rem; opacity: 0.8;">
+        Version de test statique - L'application React sera restaurée une fois les tests validés.
+      </p>
+    </div>
   </body>
 </html> 
