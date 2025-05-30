@@ -91,7 +91,7 @@ class GitHubStorageService {
       }
 
       console.log('📤 Envoi vers GitHub...')
-      const saveResponse = await this.makeRequest(
+      await this.makeRequest(
         `/repos/${this.config.owner}/${this.config.repo}/contents/${this.config.dataPath}`,
         {
           method: 'PUT',
