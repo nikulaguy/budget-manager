@@ -22,7 +22,7 @@ const queryClient = new QueryClient({
 })
 
 // Base path conditionnel selon l'environnement
-const basename = import.meta.env.PROD ? '/budget-manager' : ''
+const basename = import.meta.env.PROD ? '/budget' : ''
 
 // Styles globaux pour prévenir le scroll horizontal sur mobile
 const globalStyles = (

@@ -19,16 +19,16 @@ export default defineConfig(({ command }) => ({
         theme_color: '#1976d2',
         background_color: '#ffffff',
         display: 'standalone',
-        start_url: command === 'build' ? '/budget-manager/' : '/',
-        scope: command === 'build' ? '/budget-manager/' : '/',
+        start_url: command === 'build' ? '/budget/' : '/',
+        scope: command === 'build' ? '/budget/' : '/',
         icons: [
           {
-            src: command === 'build' ? '/budget-manager/pwa-192x192.png' : '/pwa-192x192.png',
+            src: command === 'build' ? '/budget/pwa-192x192.png' : '/pwa-192x192.png',
             sizes: '192x192',
             type: 'image/png'
           },
           {
-            src: command === 'build' ? '/budget-manager/pwa-512x512.png' : '/pwa-512x512.png',
+            src: command === 'build' ? '/budget/pwa-512x512.png' : '/pwa-512x512.png',
             sizes: '512x512',
             type: 'image/png'
           }
@@ -37,7 +37,7 @@ export default defineConfig(({ command }) => ({
     })
   ],
   // Base path différent selon l'environnement
-  base: command === 'build' ? '/budget-manager/' : '/',
+  base: command === 'build' ? '/budget/' : '/',
   build: {
     outDir: 'dist',
     sourcemap: true
