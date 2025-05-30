@@ -20,7 +20,9 @@ import {
   FormControl,
   InputLabel,
   Select,
-  MenuItem
+  MenuItem,
+  useTheme,
+  useMediaQuery
 } from '@mui/material'
 import {
   Search,
@@ -40,6 +42,8 @@ const roundToTwo = (num: number): number => {
 }
 
 const HistoryPage: React.FC = () => {
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
   const [currentHistoryDate, setCurrentHistoryDate] = useState(subMonths(new Date(), 1))
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('all')
@@ -248,72 +252,137 @@ const HistoryPage: React.FC = () => {
           </Box>
 
           {filteredExpenses.length > 0 ? (
-            <TableContainer component={Paper} variant="outlined">
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Date</TableCell>
-                    <TableCell>Description</TableCell>
-                    <TableCell>Budget</TableCell>
-                    <TableCell align="center">Catégorie</TableCell>
-                    <TableCell align="right">Montant</TableCell>
-                    <TableCell align="center">Auteur</TableCell>
-                    <TableCell align="center">Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {filteredExpenses.map((expense) => (
-                    <TableRow key={expense.id} hover>
-                      <TableCell>
-                        <Typography variant="body2">
-                          {format(expense.date, 'dd/MM/yyyy', { locale: fr })}
-                        </Typography>
-                        <Typography variant="caption" color="textSecondary">
-                          {format(expense.date, 'HH:mm', { locale: fr })}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2" fontWeight="medium">
+            !isMobile ? (
+              <TableContainer component={Paper} variant="outlined">
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Date</TableCell>
+                      <TableCell>Description</TableCell>
+                      <TableCell>Budget</TableCell>
+                      <TableCell align="center">Catégorie</TableCell>
+                      <TableCell align="right">Montant</TableCell>
+                      <TableCell align="center">Auteur</TableCell>
+                      <TableCell align="center">Actions</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {filteredExpenses.map((expense) => (
+                      <TableRow key={expense.id} hover>
+                        <TableCell>
+                          <Typography variant="body2">
+                            {format(expense.date, 'dd/MM/yyyy', { locale: fr })}
+                          </Typography>
+                          <Typography variant="caption" color="textSecondary">
+                            {format(expense.date, 'HH:mm', { locale: fr })}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2" fontWeight="medium">
+                            {expense.description}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2">
+                            {expense.budget}
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="center">
+                          <Chip
+                            label={expense.category}
+                            size="small"
+                            color={getCategoryColor(expense.category) as any}
+                            variant="outlined"
+                          />
+                        </TableCell>
+                        <TableCell align="right">
+                          <Typography variant="body2" fontWeight="medium">
+                            {formatCurrency(expense.amount)}
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="center">
+                          <Typography variant="body2">
+                            {expense.userName}
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="center">
+                          <IconButton
+                            size="small"
+                            aria-label={`Voir détails de ${expense.description}`}
+                            color="primary"
+                          >
+                            <Visibility />
+                          </IconButton>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            ) : (
+              /* Affichage mobile en cartes */
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {filteredExpenses.map((expense) => (
+                  <Paper key={expense.id} sx={{ p: 2 }} elevation={2}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Typography 
+                          variant="body1" 
+                          fontWeight="medium"
+                          sx={{ 
+                            fontSize: '1rem',
+                            lineHeight: 1.3,
+                            mb: 0.5,
+                            wordBreak: 'break-word'
+                          }}
+                        >
                           {expense.description}
                         </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2">
+                        <Typography 
+                          variant="body2" 
+                          color="textSecondary"
+                          sx={{ fontSize: '0.875rem', mb: 0.5 }}
+                        >
                           {expense.budget}
                         </Typography>
-                      </TableCell>
-                      <TableCell align="center">
-                        <Chip
-                          label={expense.category}
-                          size="small"
-                          color={getCategoryColor(expense.category) as any}
-                          variant="outlined"
-                        />
-                      </TableCell>
-                      <TableCell align="right">
-                        <Typography variant="body2" fontWeight="medium">
-                          {formatCurrency(expense.amount)}
-                        </Typography>
-                      </TableCell>
-                      <TableCell align="center">
-                        <Typography variant="body2">
-                          {expense.userName}
-                        </Typography>
-                      </TableCell>
-                      <TableCell align="center">
-                        <IconButton
-                          size="small"
-                          aria-label={`Voir détails de ${expense.description}`}
-                          color="primary"
+                        <Typography 
+                          variant="caption" 
+                          color="textSecondary"
+                          sx={{ fontSize: '0.8rem' }}
                         >
-                          <Visibility />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                          {format(expense.date, 'dd/MM/yyyy HH:mm', { locale: fr })} • {expense.userName}
+                        </Typography>
+                      </Box>
+                      <IconButton
+                        size="medium"
+                        aria-label={`Voir détails de ${expense.description}`}
+                        color="primary"
+                        sx={{ ml: 1 }}
+                      >
+                        <Visibility />
+                      </IconButton>
+                    </Box>
+                    
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Chip
+                        label={expense.category}
+                        size="medium"
+                        color={getCategoryColor(expense.category) as any}
+                        variant="outlined"
+                        sx={{ fontSize: '0.875rem' }}
+                      />
+                      <Typography
+                        variant="h6"
+                        color="primary"
+                        sx={{ fontSize: '1.1rem', fontWeight: 'bold' }}
+                      >
+                        {formatCurrency(expense.amount)}
+                      </Typography>
+                    </Box>
+                  </Paper>
+                ))}
+              </Box>
+            )
           ) : (
             <Box sx={{ textAlign: 'center', py: 6 }}>
               <Typography variant="h6" color="textSecondary" gutterBottom>

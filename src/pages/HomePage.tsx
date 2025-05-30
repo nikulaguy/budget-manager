@@ -326,7 +326,12 @@ const HomePage: React.FC = () => {
               <Typography variant="h4" color="primary.main" gutterBottom>
                 {budgetSummary.totalRemaining}€
               </Typography>
-              <Typography variant="body2" color="textSecondary" gutterBottom>
+              <Typography 
+                variant="body2" 
+                color="textSecondary" 
+                gutterBottom
+                sx={{ fontSize: isMobile ? '0.9rem' : undefined }}
+              >
                 Restant sur {budgetSummary.totalBudget}€
               </Typography>
               <LinearProgress
@@ -336,10 +341,16 @@ const HomePage: React.FC = () => {
                 sx={{ height: 8, borderRadius: 4 }}
               />
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
-                <Typography variant="caption">
+                <Typography 
+                  variant="caption"
+                  sx={{ fontSize: isMobile ? '0.8rem' : undefined }}
+                >
                   Dépensé: {budgetSummary.totalSpent}€
                 </Typography>
-                <Typography variant="caption">
+                <Typography 
+                  variant="caption"
+                  sx={{ fontSize: isMobile ? '0.8rem' : undefined }}
+                >
                   {Math.round((budgetSummary.totalSpent / budgetSummary.totalBudget) * 100)}%
                 </Typography>
               </Box>
@@ -357,7 +368,12 @@ const HomePage: React.FC = () => {
               <Typography variant="h4" color="success.main" gutterBottom>
                 {budgetSummary.savingsRemaining}€
               </Typography>
-              <Typography variant="body2" color="textSecondary" gutterBottom>
+              <Typography 
+                variant="body2" 
+                color="textSecondary" 
+                gutterBottom
+                sx={{ fontSize: isMobile ? '0.9rem' : undefined }}
+              >
                 Restant sur {budgetSummary.totalSavings}€
               </Typography>
               <LinearProgress
@@ -367,10 +383,16 @@ const HomePage: React.FC = () => {
                 sx={{ height: 8, borderRadius: 4 }}
               />
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
-                <Typography variant="caption">
+                <Typography 
+                  variant="caption"
+                  sx={{ fontSize: isMobile ? '0.8rem' : undefined }}
+                >
                   Utilisé: {budgetSummary.savingsSpent}€
                 </Typography>
-                <Typography variant="caption">
+                <Typography 
+                  variant="caption"
+                  sx={{ fontSize: isMobile ? '0.8rem' : undefined }}
+                >
                   {Math.round((budgetSummary.savingsSpent / budgetSummary.totalSavings) * 100)}%
                 </Typography>
               </Box>
@@ -457,101 +479,58 @@ const HomePage: React.FC = () => {
                   </Box>
                 </Box>
 
-                {/* Tableau des budgets de cette catégorie */}
-                <TableContainer>
-                  <Table>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell sx={{ width: isMobile ? '25%' : '30%' }}>Budget</TableCell>
-                        <TableCell align="right" sx={{ width: isMobile ? '15%' : '12%' }}>Référence</TableCell>
-                        {!isMobile && (
+                {/* Tableau des budgets de cette catégorie - Desktop */}
+                {!isMobile ? (
+                  <TableContainer>
+                    <Table>
+                      <TableHead>
+                        <TableRow>
+                          <TableCell sx={{ width: '30%' }}>Budget</TableCell>
+                          <TableCell align="right" sx={{ width: '12%' }}>Référence</TableCell>
                           <TableCell align="right" sx={{ width: '12%' }}>Dépensé</TableCell>
-                        )}
-                        <TableCell align="center" sx={{ width: isMobile ? '35%' : '25%' }}>Restant / Progression</TableCell>
-                        <TableCell align="center" sx={{ width: isMobile ? '25%' : '21%' }}>Actions</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {categoryBudgets.map((budget) => (
-                        <TableRow key={budget.id} hover>
-                          <TableCell sx={{ 
-                            width: isMobile ? '25%' : '30%',
-                            minWidth: isMobile ? '120px' : 'auto',
-                            maxWidth: isMobile ? '120px' : 'auto'
-                          }}>
-                            <Typography 
-                              variant="body2" 
-                              fontWeight="medium"
-                              sx={{ 
-                                fontSize: isMobile ? '0.75rem' : '0.875rem',
-                                lineHeight: 1.2,
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: isMobile ? 'nowrap' : 'normal'
-                              }}
-                            >
-                              {budget.name}
-                            </Typography>
-                          </TableCell>
-                          <TableCell align="right" sx={{ width: isMobile ? '15%' : '12%', minWidth: '60px' }}>
-                            <Typography 
-                              variant="body2"
-                              sx={{ fontSize: isMobile ? '0.75rem' : '0.875rem' }}
-                            >
-                              {budget.referenceValue}€
-                            </Typography>
-                          </TableCell>
-                          {!isMobile && (
-                            <TableCell align="right" sx={{ width: '12%' }}>
+                          <TableCell align="center" sx={{ width: '25%' }}>Restant / Progression</TableCell>
+                          <TableCell align="center" sx={{ width: '21%' }}>Actions</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {categoryBudgets.map((budget) => (
+                          <TableRow key={budget.id} hover>
+                            <TableCell>
+                              <Typography variant="body2" fontWeight="medium">
+                                {budget.name}
+                              </Typography>
+                            </TableCell>
+                            <TableCell align="right">
+                              <Typography variant="body2">
+                                {budget.referenceValue}€
+                              </Typography>
+                            </TableCell>
+                            <TableCell align="right">
                               <Typography variant="body2">
                                 {budget.spent}€
                               </Typography>
                             </TableCell>
-                          )}
-                          <TableCell align="center" sx={{ width: isMobile ? '35%' : '25%', minWidth: isMobile ? '80px' : '120px' }}>
-                            <Box sx={{ width: '100%' }}>
-                              <Typography
-                                variant="body2"
-                                color={budget.remaining < 0 ? 'error.main' : 'text.primary'}
-                                sx={{ 
-                                  fontSize: isMobile ? '0.75rem' : '0.875rem',
-                                  fontWeight: 'medium',
-                                  mb: 0.5 
-                                }}
-                              >
-                                {budget.remaining}€
-                              </Typography>
-                              <LinearProgress
-                                variant="determinate"
-                                value={Math.min(budget.percentage, 100)}
-                                color={getProgressColor(budget.percentage)}
-                                sx={{ 
-                                  height: isMobile ? 4 : 6, 
-                                  borderRadius: 3,
-                                  mb: 0.5
-                                }}
-                              />
-                              <Typography 
-                                variant="caption" 
-                                sx={{ 
-                                  fontSize: isMobile ? '0.6rem' : '0.75rem',
-                                  display: 'block' 
-                                }}
-                              >
-                                {Math.round(budget.percentage)}%
-                              </Typography>
-                            </Box>
-                          </TableCell>
-                          <TableCell align="center" sx={{ width: isMobile ? '25%' : '21%', minWidth: isMobile ? '40px' : 'auto' }}>
-                            {isMobile ? (
-                              <IconButton
-                                size="small"
-                                onClick={(event) => handleOpenMenu(event, budget.name)}
-                                aria-label={`Actions pour ${budget.name}`}
-                              >
-                                <MoreVert />
-                              </IconButton>
-                            ) : (
+                            <TableCell align="center">
+                              <Box sx={{ width: '100%' }}>
+                                <Typography
+                                  variant="body2"
+                                  color={budget.remaining < 0 ? 'error.main' : 'text.primary'}
+                                  sx={{ fontWeight: 'medium', mb: 0.5 }}
+                                >
+                                  {budget.remaining}€
+                                </Typography>
+                                <LinearProgress
+                                  variant="determinate"
+                                  value={Math.min(budget.percentage, 100)}
+                                  color={getProgressColor(budget.percentage)}
+                                  sx={{ height: 6, borderRadius: 3, mb: 0.5 }}
+                                />
+                                <Typography variant="caption">
+                                  {Math.round(budget.percentage)}%
+                                </Typography>
+                              </Box>
+                            </TableCell>
+                            <TableCell align="center">
                               <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
                                 <IconButton
                                   size="small"
@@ -578,13 +557,77 @@ const HomePage: React.FC = () => {
                                   <Visibility />
                                 </IconButton>
                               </Box>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                ) : (
+                  /* Affichage mobile en cartes */
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    {categoryBudgets.map((budget) => (
+                      <Paper key={budget.id} sx={{ p: 2 }} elevation={2}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                          <Box sx={{ flex: 1, minWidth: 0 }}>
+                            <Typography 
+                              variant="body1" 
+                              fontWeight="medium"
+                              sx={{ 
+                                fontSize: '1rem',
+                                lineHeight: 1.3,
+                                mb: 0.5,
+                                wordBreak: 'break-word'
+                              }}
+                            >
+                              {budget.name}
+                            </Typography>
+                            <Typography 
+                              variant="body2" 
+                              color="textSecondary"
+                              sx={{ fontSize: '0.875rem' }}
+                            >
+                              Référence: {budget.referenceValue}€ • Dépensé: {budget.spent}€
+                            </Typography>
+                          </Box>
+                          <IconButton
+                            size="medium"
+                            onClick={(event) => handleOpenMenu(event, budget.name)}
+                            aria-label={`Actions pour ${budget.name}`}
+                            sx={{ ml: 1 }}
+                          >
+                            <MoreVert />
+                          </IconButton>
+                        </Box>
+                        
+                        <Box sx={{ mb: 2 }}>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                            <Typography
+                              variant="h6"
+                              color={budget.remaining < 0 ? 'error.main' : 'text.primary'}
+                              sx={{ fontSize: '1.1rem', fontWeight: 'bold' }}
+                            >
+                              Restant: {budget.remaining}€
+                            </Typography>
+                            <Typography 
+                              variant="body2" 
+                              color="textSecondary"
+                              sx={{ fontSize: '0.875rem' }}
+                            >
+                              {Math.round(budget.percentage)}%
+                            </Typography>
+                          </Box>
+                          <LinearProgress
+                            variant="determinate"
+                            value={Math.min(budget.percentage, 100)}
+                            color={getProgressColor(budget.percentage)}
+                            sx={{ height: 8, borderRadius: 4 }}
+                          />
+                        </Box>
+                      </Paper>
+                    ))}
+                  </Box>
+                )}
               </CardContent>
             </Card>
           )
