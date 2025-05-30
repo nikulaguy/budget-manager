@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react'
+import React, { createContext, useContext, useState, useEffect } from 'react'
 import { toastWithClose } from '../utils/toast'
 
 import { User, AuthContextType } from '../types'
@@ -55,8 +55,35 @@ interface UserInvitation {
 let userInvitations: UserInvitation[] = []
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null)
+  const [user, setUser] = useState<User | null>(() => {
+    // Charger l'utilisateur depuis localStorage au démarrage
+    const savedUser = localStorage.getItem('budget-manager-user')
+    if (savedUser) {
+      try {
+        const parsedUser = JSON.parse(savedUser)
+        // Reconstituer les dates
+        return {
+          ...parsedUser,
+          createdAt: new Date(parsedUser.createdAt),
+          updatedAt: new Date(parsedUser.updatedAt)
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement de l\'utilisateur:', error)
+        localStorage.removeItem('budget-manager-user')
+      }
+    }
+    return null
+  })
   const [isLoading, setIsLoading] = useState(false)
+
+  // Sauvegarder l'utilisateur dans localStorage quand il change
+  useEffect(() => {
+    if (user) {
+      localStorage.setItem('budget-manager-user', JSON.stringify(user))
+    } else {
+      localStorage.removeItem('budget-manager-user')
+    }
+  }, [user])
 
   const signIn = async (email: string) => {
     try {

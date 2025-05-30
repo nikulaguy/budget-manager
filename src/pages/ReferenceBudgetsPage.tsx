@@ -40,7 +40,7 @@ import {
 } from '@mui/icons-material'
 import { toastWithClose } from '../utils/toast'
 
-import { defaultReferenceBudgets, defaultCategories, calculateTotalsByCategory } from '../data/referenceBudgets'
+import { defaultReferenceBudgets, defaultCategories, calculateTotalsByCategory, isCategoryCumulative } from '../data/referenceBudgets'
 
 const ReferenceBudgetsPage: React.FC = () => {
   const theme = useTheme()
@@ -274,6 +274,13 @@ const ReferenceBudgetsPage: React.FC = () => {
                     size="small"
                     color={getCategoryColor(category.name) as any}
                   />
+                  <Chip
+                    label={isCategoryCumulative(category.name) ? 'Cumulatif' : 'Non cumulatif'}
+                    size="small"
+                    variant="outlined"
+                    color={isCategoryCumulative(category.name) ? 'success' : 'default'}
+                    sx={{ fontSize: isMobile ? '0.75rem' : undefined }}
+                  />
                   <Typography 
                     variant="body2" 
                     color="textSecondary"
@@ -284,6 +291,17 @@ const ReferenceBudgetsPage: React.FC = () => {
                 </Box>
               </AccordionSummary>
               <AccordionDetails>
+                {isCategoryCumulative(category.name) && (
+                  <Box sx={{ mb: 2, p: 2, bgcolor: 'success.50', borderRadius: 1 }}>
+                    <Typography 
+                      variant="body2" 
+                      color="success.main" 
+                      sx={{ fontSize: isMobile ? '0.875rem' : undefined }}
+                    >
+                      ℹ️ Cette catégorie est cumulative : les montants non dépensés seront ajoutés au budget du mois suivant.
+                    </Typography>
+                  </Box>
+                )}
                 {categoryBudgets.length > 0 ? (
                   !isMobile ? (
                     /* Affichage desktop en tableau */

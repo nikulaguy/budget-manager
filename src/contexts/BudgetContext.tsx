@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react'
-import { defaultReferenceBudgets } from '../data/referenceBudgets'
+import { defaultReferenceBudgets, isCategoryCumulative } from '../data/referenceBudgets'
 import { githubStorage, configureGitHubToken, AppData } from '../services/githubStorage'
 import { toastWithClose } from '../utils/toast'
 
@@ -50,6 +50,8 @@ interface BudgetContextType {
   deleteExpense: (budgetName: string, expenseId: string) => void
   resetBudget: (budgetName: string) => void
   resetAllBudgets: () => void
+  // Nouvelle fonction pour passer au mois suivant avec logique cumulative
+  moveToNextMonth: () => void
   // Fonctions pour la synchronisation GitHub
   loadFromGitHub: () => Promise<void>
   saveToGitHub: () => Promise<void>
@@ -311,6 +313,55 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
     autoSave()
   }
 
+  const moveToNextMonth = () => {
+    // Calculer les nouveaux budgets pour le mois suivant
+    const newBudgets = monthlyBudgets.map(budget => {
+      const isCumulative = isCategoryCumulative(budget.category)
+      
+      if (isCumulative) {
+        // Pour les catégories cumulatives (Mensuel, Annuel) : 
+        // Nouveau budget = valeur de référence + reste du mois précédent
+        const newReferenceValue = roundToTwo(budget.referenceValue + Math.max(0, budget.remaining))
+        return {
+          ...budget,
+          referenceValue: newReferenceValue,
+          spent: 0,
+          remaining: newReferenceValue,
+          percentage: 0
+        }
+      } else {
+        // Pour les catégories non cumulatives (Courant, Épargne) :
+        // Nouveau budget = valeur de référence (reset complet)
+        return {
+          ...budget,
+          spent: 0,
+          remaining: budget.referenceValue,
+          percentage: 0
+        }
+      }
+    })
+
+    // Naviguer vers le mois suivant
+    const currentDate = new Date(currentYear, currentMonth - 1) // currentMonth est 1-based
+    const nextDate = new Date(currentDate)
+    nextDate.setMonth(nextDate.getMonth() + 1)
+
+    // Mettre à jour les budgets
+    setMonthlyBudgets(newBudgets)
+
+    // Supprimer toutes les dépenses du mois précédent
+    setBudgetExpenses({})
+
+    // Mettre à jour la date
+    setCurrentMonth(nextDate.getMonth() + 1) // Reconvertir en 1-based
+    setCurrentYear(nextDate.getFullYear())
+
+    // Sauvegarde automatique
+    autoSave()
+
+    toastWithClose.success('Passage au mois suivant effectué avec report des budgets cumulatifs')
+  }
+
   const value: BudgetContextType = {
     currentMonth,
     currentYear,
@@ -330,6 +381,7 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
     deleteExpense,
     resetBudget,
     resetAllBudgets,
+    moveToNextMonth,
     loadFromGitHub,
     saveToGitHub,
     isLoading

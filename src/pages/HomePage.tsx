@@ -70,7 +70,8 @@ const HomePage: React.FC = () => {
     addExpense,
     deleteExpense,
     resetBudget,
-    resetAllBudgets
+    resetAllBudgets,
+    moveToNextMonth
   } = useBudget()
   const [showNextMonthDialog, setShowNextMonthDialog] = useState(false)
   const [showResetAllBudgetsDialog, setShowResetAllBudgetsDialog] = useState(false)
@@ -148,15 +149,8 @@ const HomePage: React.FC = () => {
   }
 
   const confirmNextMonth = () => {
-    const nextDate = addMonths(currentDate, 1)
-    
-    // Réinitialiser tous les budgets et ajouter les restes du mois actuel
-    resetAllBudgets()
-    
-    // Logique pour ajouter les restes au mois suivant pourrait être ajoutée ici
-    
-    setCurrentMonth(nextDate.getMonth() + 1)
-    setCurrentYear(nextDate.getFullYear())
+    // Utiliser la nouvelle fonction du contexte qui gère la logique cumulative
+    moveToNextMonth()
     setShowNextMonthDialog(false)
   }
 
