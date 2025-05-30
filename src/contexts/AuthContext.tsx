@@ -1,10 +1,6 @@
-import React, { createContext, useContext, useEffect, useState } from 'react'
-import { signInWithEmailAndPassword, signOut as firebaseSignOut } from 'firebase/auth'
-import { useAuthState } from 'react-firebase-hooks/auth'
-import { doc, getDoc, setDoc } from 'firebase/firestore'
+import React, { createContext, useContext, useState } from 'react'
 import { toast } from 'react-hot-toast'
 
-import { auth, db } from '../config/firebase'
 import { User, AuthContextType } from '../types'
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -44,59 +40,8 @@ const predefinedUsers: Record<string, Omit<User, 'id' | 'createdAt' | 'updatedAt
 }
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [firebaseUser, loading, error] = useAuthState(auth)
   const [user, setUser] = useState<User | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-
-  useEffect(() => {
-    const fetchUserData = async () => {
-      if (firebaseUser) {
-        try {
-          const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid))
-          
-          if (userDoc.exists()) {
-            const userData = userDoc.data() as User
-            setUser(userData)
-          } else {
-            // Créer un utilisateur à partir des données prédéfinies
-            const predefinedUser = predefinedUsers[firebaseUser.email!]
-            if (predefinedUser) {
-              const newUser: User = {
-                id: firebaseUser.uid,
-                ...predefinedUser,
-                createdAt: new Date(),
-                updatedAt: new Date()
-              }
-              
-              await setDoc(doc(db, 'users', firebaseUser.uid), newUser)
-              setUser(newUser)
-              toast.success(`Bienvenue ${newUser.firstName} !`)
-            } else {
-              toast.error('Utilisateur non autorisé')
-              await firebaseSignOut(auth)
-            }
-          }
-        } catch (err) {
-          console.error('Erreur lors de la récupération des données utilisateur:', err)
-          toast.error('Erreur lors de la connexion')
-        }
-      } else {
-        setUser(null)
-      }
-      setIsLoading(false)
-    }
-
-    if (!loading) {
-      fetchUserData()
-    }
-  }, [firebaseUser, loading])
-
-  useEffect(() => {
-    if (error) {
-      console.error('Erreur d\'authentification:', error)
-      toast.error('Erreur d\'authentification')
-    }
-  }, [error])
+  const [isLoading, setIsLoading] = useState(false)
 
   const signIn = async (email: string) => {
     try {
@@ -109,30 +54,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return
       }
 
-      // Pour la démonstration, nous utilisons un mot de passe par défaut
-      // En production, il faudrait un système d'authentification plus robuste
-      const password = 'defaultPassword123'
+      // Simuler une authentification en mode démo
+      const predefinedUser = predefinedUsers[email]
+      const mockUser: User = {
+        id: 'demo-' + email,
+        ...predefinedUser,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
       
-      await signInWithEmailAndPassword(auth, email, password)
+      // Simuler un délai d'authentification
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      setUser(mockUser)
+      toast.success(`Bienvenue ${mockUser.firstName} ! (Mode démo)`)
+      setIsLoading(false)
     } catch (err: any) {
       console.error('Erreur de connexion:', err)
-      
-      if (err.code === 'auth/user-not-found') {
-        toast.error('Utilisateur non trouvé')
-      } else if (err.code === 'auth/wrong-password') {
-        toast.error('Mot de passe incorrect')
-      } else if (err.code === 'auth/invalid-email') {
-        toast.error('Email invalide')
-      } else {
-        toast.error('Erreur de connexion')
-      }
+      toast.error('Erreur de connexion')
       setIsLoading(false)
     }
   }
 
   const signOut = async () => {
     try {
-      await firebaseSignOut(auth)
       setUser(null)
       toast.success('Déconnexion réussie')
     } catch (err) {

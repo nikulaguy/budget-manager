@@ -1,37 +1,31 @@
-import { initializeApp } from 'firebase/app'
-import { getAuth, connectAuthEmulator } from 'firebase/auth'
-import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore'
+import { initializeApp, FirebaseApp } from 'firebase/app'
+import { getAuth, Auth } from 'firebase/auth'
+import { getFirestore, Firestore } from 'firebase/firestore'
 
-// Configuration Firebase
-// En production, ces valeurs devraient être dans des variables d'environnement
+// Configuration Firebase avec des valeurs par défaut pour la démo
 const firebaseConfig = {
-  apiKey: "your-api-key",
-  authDomain: "budget-manager-app.firebaseapp.com",
-  projectId: "budget-manager-app",
-  storageBucket: "budget-manager-app.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "1:123456789:web:abcdef"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "demo-api-key",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "demo-project.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "demo-project",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "demo-project.appspot.com",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "123456789",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:123456789:web:abcdef123456"
 }
 
-// Initialiser Firebase
-const app = initializeApp(firebaseConfig)
+// Initialisation de Firebase
+let app: FirebaseApp | undefined
+let auth: Auth | undefined
+let db: Firestore | undefined
 
-// Initialiser l'authentification
-export const auth = getAuth(app)
-
-// Initialiser Firestore
-export const db = getFirestore(app)
-
-// Configuration pour le développement local
-if (import.meta.env.DEV) {
-  // Utiliser les émulateurs Firebase en développement
-  try {
-    connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true })
-    connectFirestoreEmulator(db, 'localhost', 8080)
-  } catch (error) {
-    // Les émulateurs sont déjà connectés
-    console.log('Firebase emulators already connected')
-  }
+try {
+  app = initializeApp(firebaseConfig)
+  auth = getAuth(app)
+  db = getFirestore(app)
+} catch (error) {
+  console.warn('Firebase initialization failed, running in demo mode:', error)
+  // En mode démo, nous utiliserons des mocks
 }
 
+// Exports avec types définis
+export { auth, db }
 export default app 

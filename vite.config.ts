@@ -2,6 +2,7 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
+// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
     react(),
@@ -10,10 +11,11 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}']
       },
+      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
         name: 'BudgetManager',
         short_name: 'BudgetManager',
-        description: 'Application de gestion de budget responsive et accessible',
+        description: 'Application de gestion de budget moderne et accessible',
         theme_color: '#1976d2',
         background_color: '#ffffff',
         display: 'standalone',
@@ -32,8 +34,12 @@ export default defineConfig({
       }
     })
   ],
+  base: '/budget-manager/',
+  build: {
+    outDir: 'dist',
+    sourcemap: true
+  },
   server: {
-    port: 3000,
-    host: true
+    port: 3000
   }
 }) 
