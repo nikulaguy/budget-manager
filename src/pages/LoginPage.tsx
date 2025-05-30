@@ -9,7 +9,6 @@ import {
   Container,
   CircularProgress,
   Alert,
-  Paper,
   useTheme
 } from '@mui/material'
 import { Email, Login } from '@mui/icons-material'
@@ -37,7 +36,6 @@ const LoginPage: React.FC = () => {
   const {
     control,
     handleSubmit,
-    setValue,
     formState: { errors, isSubmitting }
   } = useForm<LoginForm>({
     resolver: yupResolver(loginSchema),
@@ -54,14 +52,6 @@ const LoginPage: React.FC = () => {
       setError(err.message || 'Erreur de connexion')
     }
   }
-
-  const predefinedEmails = [
-    'nikuland@gmail.com',
-    'romain.troalen@gmail.com',
-    'guillaume.marion.perso@gmail.com',
-    'remi.roux@gmail.com',
-    'alix.troalen@gmail.com'
-  ]
 
   return (
     <Container
@@ -164,57 +154,12 @@ const LoginPage: React.FC = () => {
               sx={{
                 py: 1.5,
                 fontSize: '1.1rem',
-                fontWeight: 500,
-                mb: 3
+                fontWeight: 500
               }}
               aria-describedby={isSubmitting ? 'loading-text' : undefined}
             >
               {isSubmitting || loading ? 'Connexion...' : 'Se connecter'}
             </Button>
-
-            {/* Aide visuelle pour la démonstration */}
-            <Paper
-              sx={{
-                p: 2,
-                bgcolor: 'grey.50',
-                border: `1px solid ${theme.palette.grey[200]}`
-              }}
-            >
-              <Typography
-                variant="body2"
-                color="textSecondary"
-                gutterBottom
-                sx={{ fontWeight: 500 }}
-              >
-                Comptes de démonstration :
-              </Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                {predefinedEmails.map((email) => (
-                  <Button
-                    key={email}
-                    variant="text"
-                    size="small"
-                    onClick={() => {
-                      // Pré-remplir le champ email
-                      setValue('email', email)
-                    }}
-                    sx={{
-                      justifyContent: 'flex-start',
-                      textTransform: 'none',
-                      color: 'text.secondary',
-                      fontSize: '0.875rem',
-                      '&:hover': {
-                        color: 'primary.main',
-                        backgroundColor: 'transparent'
-                      }
-                    }}
-                    aria-label={`Utiliser l'email ${email}`}
-                  >
-                    {email}
-                  </Button>
-                ))}
-              </Box>
-            </Paper>
           </Box>
         </CardContent>
       </Card>

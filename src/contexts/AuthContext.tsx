@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState } from 'react'
 import { toast } from 'react-hot-toast'
+import { toastWithClose } from '../utils/toast'
 
 import { User, AuthContextType } from '../types'
 
@@ -39,6 +40,21 @@ const predefinedUsers: Record<string, Omit<User, 'id' | 'createdAt' | 'updatedAt
   }
 }
 
+// Interface pour les invitations d'utilisateurs
+interface UserInvitation {
+  id: string
+  email: string
+  firstName: string
+  lastName: string
+  role: 'master' | 'simple'
+  invitedBy: string
+  invitedAt: Date
+  status: 'pending' | 'accepted' | 'expired'
+}
+
+// État global des invitations (simulé)
+let userInvitations: UserInvitation[] = []
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -49,7 +65,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // Vérifier si l'utilisateur est autorisé
       if (!predefinedUsers[email]) {
-        toast.error('Utilisateur non autorisé')
+        toastWithClose.error('Utilisateur non autorisé')
         setIsLoading(false)
         return
       }
@@ -67,11 +83,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await new Promise(resolve => setTimeout(resolve, 1000))
       
       setUser(mockUser)
-      toast.success(`Bienvenue ${mockUser.firstName} ! (Mode démo)`)
+      toastWithClose.success(`Bienvenue ${mockUser.firstName} ! (Mode démo)`)
       setIsLoading(false)
     } catch (err: any) {
       console.error('Erreur de connexion:', err)
-      toast.error('Erreur de connexion')
+      toastWithClose.error('Erreur de connexion')
       setIsLoading(false)
     }
   }
@@ -79,10 +95,116 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signOut = async () => {
     try {
       setUser(null)
-      toast.success('Déconnexion réussie')
+      toastWithClose.success('Déconnexion réussie')
     } catch (err) {
       console.error('Erreur de déconnexion:', err)
-      toast.error('Erreur lors de la déconnexion')
+      toastWithClose.error('Erreur lors de la déconnexion')
+    }
+  }
+
+  // Fonction pour vérifier les permissions d'invitation
+  const canInviteUsers = (userRole: string): boolean => {
+    return userRole === 'masterMaitre' || userRole === 'master'
+  }
+
+  const canInviteMasters = (userRole: string): boolean => {
+    return userRole === 'masterMaitre'
+  }
+
+  // Fonction pour inviter un utilisateur
+  const inviteUser = async (invitation: {
+    email: string
+    firstName: string
+    lastName: string
+    role: 'master' | 'simple'
+  }): Promise<boolean> => {
+    try {
+      if (!user) {
+        toastWithClose.error('Vous devez être connecté pour inviter des utilisateurs')
+        return false
+      }
+
+      // Vérifier les permissions
+      if (!canInviteUsers(user.role)) {
+        toastWithClose.error('Vous n\'avez pas les permissions pour inviter des utilisateurs')
+        return false
+      }
+
+      if (invitation.role === 'master' && !canInviteMasters(user.role)) {
+        toastWithClose.error('Seul le Master Maître peut inviter des comptes Master')
+        return false
+      }
+
+      // Vérifier si l'utilisateur existe déjà
+      if (predefinedUsers[invitation.email]) {
+        toastWithClose.error('Cet utilisateur existe déjà dans l\'application')
+        return false
+      }
+
+      // Vérifier si une invitation existe déjà
+      const existingInvitation = userInvitations.find(
+        inv => inv.email === invitation.email && inv.status === 'pending'
+      )
+      if (existingInvitation) {
+        toastWithClose.error('Une invitation est déjà en cours pour cet email')
+        return false
+      }
+
+      // Créer l'invitation
+      const newInvitation: UserInvitation = {
+        id: `inv-${Date.now()}`,
+        email: invitation.email,
+        firstName: invitation.firstName,
+        lastName: invitation.lastName,
+        role: invitation.role,
+        invitedBy: user.email,
+        invitedAt: new Date(),
+        status: 'pending'
+      }
+
+      userInvitations.push(newInvitation)
+
+      // Simuler l'envoi d'email
+      await new Promise(resolve => setTimeout(resolve, 1000))
+
+      toastWithClose.success(`Invitation envoyée à ${invitation.email}`)
+      return true
+    } catch (err) {
+      console.error('Erreur lors de l\'invitation:', err)
+      toastWithClose.error('Erreur lors de l\'envoi de l\'invitation')
+      return false
+    }
+  }
+
+  // Fonction pour obtenir les invitations en cours (pour les admins)
+  const getPendingInvitations = (): UserInvitation[] => {
+    if (!user || !canInviteUsers(user.role)) {
+      return []
+    }
+    return userInvitations.filter(inv => inv.status === 'pending')
+  }
+
+  // Fonction pour annuler une invitation
+  const cancelInvitation = async (invitationId: string): Promise<boolean> => {
+    try {
+      if (!user || !canInviteUsers(user.role)) {
+        toastWithClose.error('Permissions insuffisantes')
+        return false
+      }
+
+      const invitationIndex = userInvitations.findIndex(inv => inv.id === invitationId)
+      if (invitationIndex === -1) {
+        toastWithClose.error('Invitation non trouvée')
+        return false
+      }
+
+      userInvitations.splice(invitationIndex, 1)
+      toastWithClose.success('Invitation annulée')
+      return true
+    } catch (err) {
+      console.error('Erreur lors de l\'annulation:', err)
+      toastWithClose.error('Erreur lors de l\'annulation de l\'invitation')
+      return false
     }
   }
 
@@ -91,7 +213,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loading: isLoading,
     signIn,
     signOut,
-    isAuthenticated: !!user
+    isAuthenticated: !!user,
+    // Nouvelles fonctions d'invitation
+    canInviteUsers: () => user ? canInviteUsers(user.role) : false,
+    canInviteMasters: () => user ? canInviteMasters(user.role) : false,
+    inviteUser,
+    getPendingInvitations,
+    cancelInvitation
   }
 
   return (

@@ -9,9 +9,9 @@ const colors = {
     contrastText: '#ffffff',
   },
   secondary: {
-    main: '#dc004e', // Rouge secondaire
-    light: '#ff5983',
-    dark: '#9a0036',
+    main: '#212121', // Noir/gris foncé pour la navigation active
+    light: '#424242',
+    dark: '#000000',
     contrastText: '#ffffff',
   },
   success: {
@@ -137,8 +137,50 @@ export const theme = createTheme({
           '& .MuiOutlinedInput-root': {
             borderRadius: 8,
             '&:focus-within': {
-              outline: '2px solid #1976d2',
-              outlineOffset: '2px',
+              outline: 'none',
+            },
+            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+              borderWidth: '2px',
+              borderColor: '#1976d2',
+            },
+          },
+          '& .MuiInputLabel-root': {
+            zIndex: 1,
+            '&.Mui-focused': {
+              color: '#1976d2',
+              fontWeight: 500,
+            },
+          },
+          '& .MuiOutlinedInput-input:focus': {
+            outline: 'none',
+          },
+        },
+      },
+    },
+    MuiSelect: {
+      styleOverrides: {
+        root: {
+          '&.MuiOutlinedInput-root': {
+            borderRadius: 8,
+            '&:focus-within': {
+              outline: 'none',
+            },
+            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+              borderWidth: '2px',
+              borderColor: '#1976d2',
+            },
+          },
+        },
+      },
+    },
+    MuiFormControl: {
+      styleOverrides: {
+        root: {
+          '& .MuiInputLabel-root': {
+            zIndex: 1,
+            '&.Mui-focused': {
+              color: '#1976d2',
+              fontWeight: 500,
             },
           },
         },

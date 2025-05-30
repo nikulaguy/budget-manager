@@ -35,22 +35,35 @@ import {
   Euro
 } from '@mui/icons-material'
 import { toast } from 'react-hot-toast'
+import { toastWithClose } from '../utils/toast'
 
 import { defaultReferenceBudgets, defaultCategories, calculateTotalsByCategory } from '../data/referenceBudgets'
 
 const ReferenceBudgetsPage: React.FC = () => {
   const [showAddDialog, setShowAddDialog] = useState(false)
+  const [showEditDialog, setShowEditDialog] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [selectedBudget, setSelectedBudget] = useState<string | null>(null)
+  const [referenceBudgets, setReferenceBudgets] = useState(defaultReferenceBudgets)
+  const [newBudget, setNewBudget] = useState<{ name: string; amount: string; category: string }>({ 
+    name: '', 
+    amount: '', 
+    category: 'Courant' 
+  })
+  const [editBudget, setEditBudget] = useState<{ name: string; amount: string; category: string }>({ 
+    name: '', 
+    amount: '', 
+    category: 'Courant' 
+  })
 
   // Grouper les budgets par catégorie
-  const budgetsByCategory = defaultReferenceBudgets.reduce((acc, budget) => {
+  const budgetsByCategory = referenceBudgets.reduce((acc, budget) => {
     if (!acc[budget.category]) {
       acc[budget.category] = []
     }
     acc[budget.category].push(budget)
     return acc
-  }, {} as Record<string, typeof defaultReferenceBudgets>)
+  }, {} as Record<string, typeof referenceBudgets>)
 
   const totals = calculateTotalsByCategory()
 
@@ -69,7 +82,16 @@ const ReferenceBudgetsPage: React.FC = () => {
   }
 
   const handleEditBudget = (budgetName: string) => {
-    toast(`Édition du budget: ${budgetName}`, { icon: '✏️' })
+    const budget = referenceBudgets.find(b => b.name === budgetName)
+    if (budget) {
+      setEditBudget({
+        name: budget.name,
+        amount: budget.value.toString(),
+        category: budget.category
+      })
+      setSelectedBudget(budgetName)
+      setShowEditDialog(true)
+    }
   }
 
   const handleDeleteBudget = (budgetName: string) => {
@@ -79,10 +101,66 @@ const ReferenceBudgetsPage: React.FC = () => {
 
   const confirmDeleteBudget = () => {
     if (selectedBudget) {
-      toast.success(`Budget "${selectedBudget}" supprimé`)
+      setReferenceBudgets(referenceBudgets.filter(b => b.name !== selectedBudget))
+      toastWithClose.success(`Budget "${selectedBudget}" supprimé`)
       setShowDeleteDialog(false)
       setSelectedBudget(null)
     }
+  }
+
+  const handleSubmitNewBudget = () => {
+    if (!newBudget.name || !newBudget.amount || !newBudget.category) {
+      toastWithClose.error('Veuillez remplir tous les champs')
+      return
+    }
+
+    if (referenceBudgets.some(b => b.name === newBudget.name)) {
+      toastWithClose.error('Un budget avec ce nom existe déjà')
+      return
+    }
+
+    const budget = {
+      name: newBudget.name,
+      value: parseFloat(newBudget.amount),
+      category: newBudget.category as "Courant" | "Mensuel" | "Annuel" | "Épargne",
+      isDefault: false
+    }
+
+    setReferenceBudgets([...referenceBudgets, budget])
+    setNewBudget({ name: '', amount: '', category: 'Courant' })
+    setShowAddDialog(false)
+    toastWithClose.success('Budget de référence ajouté')
+  }
+
+  const handleSubmitEditBudget = () => {
+    if (!editBudget.name || !editBudget.amount || !editBudget.category) {
+      toastWithClose.error('Veuillez remplir tous les champs')
+      return
+    }
+
+    // Vérifier si le nom est déjà utilisé par un autre budget
+    if (editBudget.name !== selectedBudget && referenceBudgets.some(b => b.name === editBudget.name)) {
+      toastWithClose.error('Un budget avec ce nom existe déjà')
+      return
+    }
+
+    setReferenceBudgets(prev => 
+      prev.map(budget => 
+        budget.name === selectedBudget
+          ? {
+              ...budget,
+              name: editBudget.name,
+              value: parseFloat(editBudget.amount),
+              category: editBudget.category as "Courant" | "Mensuel" | "Annuel" | "Épargne"
+            }
+          : budget
+      )
+    )
+
+    toastWithClose.success(`Budget "${selectedBudget}" modifié`)
+    setShowEditDialog(false)
+    setSelectedBudget(null)
+    setEditBudget({ name: '', amount: '', category: 'Courant' })
   }
 
   const formatCurrency = (amount: number) => {
@@ -258,6 +336,8 @@ const ReferenceBudgetsPage: React.FC = () => {
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
             <TextField
               label="Nom du budget"
+              value={newBudget.name}
+              onChange={(e) => setNewBudget({ ...newBudget, name: e.target.value })}
               fullWidth
               placeholder="Ex: Courses alimentaires"
               aria-label="Nom du budget de référence"
@@ -265,6 +345,8 @@ const ReferenceBudgetsPage: React.FC = () => {
             <TextField
               label="Montant (€)"
               type="number"
+              value={newBudget.amount}
+              onChange={(e) => setNewBudget({ ...newBudget, amount: e.target.value })}
               fullWidth
               placeholder="100"
               inputProps={{ min: 0, step: 0.01 }}
@@ -274,7 +356,8 @@ const ReferenceBudgetsPage: React.FC = () => {
               <InputLabel>Catégorie</InputLabel>
               <Select
                 label="Catégorie"
-                defaultValue=""
+                value={newBudget.category}
+                onChange={(e) => setNewBudget({ ...newBudget, category: e.target.value })}
                 aria-label="Sélectionner une catégorie"
               >
                 {defaultCategories.map((category) => (
@@ -292,10 +375,7 @@ const ReferenceBudgetsPage: React.FC = () => {
           </Button>
           <Button 
             variant="contained"
-            onClick={() => {
-              toast.success('Budget de référence ajouté')
-              setShowAddDialog(false)
-            }}
+            onClick={handleSubmitNewBudget}
           >
             Ajouter
           </Button>
@@ -329,6 +409,67 @@ const ReferenceBudgetsPage: React.FC = () => {
             variant="contained"
           >
             Supprimer
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Dialog d'édition de budget */}
+      <Dialog 
+        open={showEditDialog} 
+        onClose={() => setShowEditDialog(false)}
+        aria-labelledby="edit-budget-dialog-title"
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle id="edit-budget-dialog-title">
+          Modifier le budget de référence
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+            <TextField
+              label="Nom du budget"
+              value={editBudget.name}
+              onChange={(e) => setEditBudget({ ...editBudget, name: e.target.value })}
+              fullWidth
+              placeholder="Ex: Courses alimentaires"
+              aria-label="Nom du budget de référence"
+            />
+            <TextField
+              label="Montant (€)"
+              type="number"
+              value={editBudget.amount}
+              onChange={(e) => setEditBudget({ ...editBudget, amount: e.target.value })}
+              fullWidth
+              placeholder="100"
+              inputProps={{ min: 0, step: 0.01 }}
+              aria-label="Montant du budget en euros"
+            />
+            <FormControl fullWidth>
+              <InputLabel>Catégorie</InputLabel>
+              <Select
+                label="Catégorie"
+                value={editBudget.category}
+                onChange={(e) => setEditBudget({ ...editBudget, category: e.target.value })}
+                aria-label="Sélectionner une catégorie"
+              >
+                {defaultCategories.map((category) => (
+                  <MenuItem key={category.name} value={category.name}>
+                    {category.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowEditDialog(false)}>
+            Annuler
+          </Button>
+          <Button 
+            variant="contained"
+            onClick={handleSubmitEditBudget}
+          >
+            Modifier
           </Button>
         </DialogActions>
       </Dialog>

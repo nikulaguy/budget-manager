@@ -147,6 +147,18 @@ export interface Invitation {
   expiresAt: Date
 }
 
+// Interface pour les invitations d'utilisateurs (utilisée dans AuthContext)
+export interface UserInvitation {
+  id: string
+  email: string
+  firstName: string
+  lastName: string
+  role: 'master' | 'simple'
+  invitedBy: string
+  invitedAt: Date
+  status: 'pending' | 'accepted' | 'expired'
+}
+
 // Types pour les réponses API
 export interface ApiResponse<T> {
   data: T
@@ -220,6 +232,17 @@ export interface AuthContextType {
   signIn: (email: string) => Promise<void>
   signOut: () => Promise<void>
   isAuthenticated: boolean
+  // Nouvelles fonctions d'invitation
+  canInviteUsers: () => boolean
+  canInviteMasters: () => boolean
+  inviteUser: (invitation: {
+    email: string
+    firstName: string
+    lastName: string
+    role: 'master' | 'simple'
+  }) => Promise<boolean>
+  getPendingInvitations: () => UserInvitation[]
+  cancelInvitation: (invitationId: string) => Promise<boolean>
 }
 
 export interface BudgetContextType {

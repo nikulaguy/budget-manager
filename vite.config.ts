@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vitejs.dev/config/
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   plugins: [
     react(),
     VitePWA({
@@ -34,7 +34,8 @@ export default defineConfig({
       }
     })
   ],
-  base: '/budget-manager/',
+  // Base path différent selon l'environnement
+  base: command === 'build' ? '/budget-manager/' : '/',
   build: {
     outDir: 'dist',
     sourcemap: true
@@ -42,4 +43,4 @@ export default defineConfig({
   server: {
     port: 3000
   }
-}) 
+})) 
