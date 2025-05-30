@@ -40,7 +40,7 @@ const HistoryPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState('all')
   
   // Récupérer les vraies données de dépenses depuis le context
-  const { budgetExpenses, monthlyBudgets } = useBudget()
+  const { budgetExpenses } = useBudget()
 
   const categories = ['all', 'Courant', 'Mensuel', 'Annuel', 'Épargne']
 

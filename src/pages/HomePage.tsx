@@ -24,10 +24,6 @@ import {
   useTheme,
   useMediaQuery,
   TextField,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemSecondaryAction,
   FormControl,
   InputLabel,
   Select,
@@ -47,12 +43,9 @@ import {
 } from '@mui/icons-material'
 import { format, addMonths, subMonths } from 'date-fns'
 import { fr } from 'date-fns/locale'
-import { toast } from 'react-hot-toast'
 import { toastWithClose } from '../utils/toast'
-import { useNavigate } from 'react-router-dom'
 
 import { useBudget } from '../contexts/BudgetContext'
-import { defaultReferenceBudgets, getTotalBudgetAmount, getTotalSavingsAmount } from '../data/referenceBudgets'
 import { useAuth } from '../contexts/AuthContext'
 
 // Fonction utilitaire pour arrondir les nombres et éviter les problèmes de précision
@@ -72,8 +65,6 @@ const HomePage: React.FC = () => {
     globalAddExpenseOpen,
     selectedBudgetForExpense,
     closeGlobalDialogs,
-    globalAddBudgetOpen,
-    globalAddCategoryOpen,
     monthlyBudgets,
     budgetExpenses,
     addExpense,
@@ -291,8 +282,6 @@ const HomePage: React.FC = () => {
   }
 
   const currentMonthName = format(currentDate, 'MMMM yy', { locale: fr })
-
-  const navigate = useNavigate()
 
   return (
     <Box>
@@ -566,7 +555,7 @@ const HomePage: React.FC = () => {
                               <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
                                 <IconButton
                                   size="small"
-                                  onClick={(event) => handleAddExpense(budget.name, false)}
+                                  onClick={() => handleAddExpense(budget.name, false)}
                                   aria-label={`Ajouter dépense pour ${budget.name}`}
                                   color="primary"
                                 >
@@ -574,7 +563,7 @@ const HomePage: React.FC = () => {
                                 </IconButton>
                                 <IconButton
                                   size="small"
-                                  onClick={(event) => handleResetBudget(budget.name, false)}
+                                  onClick={() => handleResetBudget(budget.name, false)}
                                   aria-label={`Réinitialiser ${budget.name}`}
                                   color="secondary"
                                 >
@@ -582,7 +571,7 @@ const HomePage: React.FC = () => {
                                 </IconButton>
                                 <IconButton
                                   size="small"
-                                  onClick={(event) => handleViewExpenses(budget.name, false)}
+                                  onClick={() => handleViewExpenses(budget.name, false)}
                                   aria-label={`Voir dépenses de ${budget.name}`}
                                   color="info"
                                 >
@@ -616,15 +605,15 @@ const HomePage: React.FC = () => {
           horizontal: 'right',
         }}
       >
-        <MenuItem onClick={(event) => selectedBudget && handleAddExpense(selectedBudget, true)}>
+        <MenuItem onClick={() => selectedBudget && handleAddExpense(selectedBudget, true)}>
           <Add sx={{ mr: 1 }} fontSize="small" />
           Ajouter dépense
         </MenuItem>
-        <MenuItem onClick={(event) => selectedBudget && handleResetBudget(selectedBudget, true)}>
+        <MenuItem onClick={() => selectedBudget && handleResetBudget(selectedBudget, true)}>
           <Refresh sx={{ mr: 1 }} fontSize="small" />
           Réinitialiser
         </MenuItem>
-        <MenuItem onClick={(event) => selectedBudget && handleViewExpenses(selectedBudget, true)}>
+        <MenuItem onClick={() => selectedBudget && handleViewExpenses(selectedBudget, true)}>
           <Visibility sx={{ mr: 1 }} fontSize="small" />
           Voir dépenses
         </MenuItem>

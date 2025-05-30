@@ -1,4 +1,3 @@
-import React from 'react'
 import { toast } from 'react-hot-toast'
 import { IconButton } from '@mui/material'
 import { Close } from '@mui/icons-material'

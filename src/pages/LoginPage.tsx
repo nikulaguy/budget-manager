@@ -8,8 +8,7 @@ import {
   Typography,
   Container,
   CircularProgress,
-  Alert,
-  useTheme
+  Alert
 } from '@mui/material'
 import { Email, Login } from '@mui/icons-material'
 import { useForm, Controller } from 'react-hook-form'
@@ -29,7 +28,6 @@ const loginSchema = yup.object({
 })
 
 const LoginPage: React.FC = () => {
-  const theme = useTheme()
   const { signIn, loading } = useAuth()
   const [error, setError] = useState<string | null>(null)
 

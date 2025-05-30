@@ -19,14 +19,16 @@ export default defineConfig(({ command }) => ({
         theme_color: '#1976d2',
         background_color: '#ffffff',
         display: 'standalone',
+        start_url: command === 'build' ? '/budget-manager/' : '/',
+        scope: command === 'build' ? '/budget-manager/' : '/',
         icons: [
           {
-            src: 'pwa-192x192.png',
+            src: command === 'build' ? '/budget-manager/pwa-192x192.png' : '/pwa-192x192.png',
             sizes: '192x192',
             type: 'image/png'
           },
           {
-            src: 'pwa-512x512.png',
+            src: command === 'build' ? '/budget-manager/pwa-512x512.png' : '/pwa-512x512.png',
             sizes: '512x512',
             type: 'image/png'
           }

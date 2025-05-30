@@ -34,7 +34,6 @@ import {
   ExpandMore,
   Euro
 } from '@mui/icons-material'
-import { toast } from 'react-hot-toast'
 import { toastWithClose } from '../utils/toast'
 
 import { defaultReferenceBudgets, defaultCategories, calculateTotalsByCategory } from '../data/referenceBudgets'

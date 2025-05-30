@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState } from 'react'
-import { toast } from 'react-hot-toast'
 import { toastWithClose } from '../utils/toast'
 
 import { User, AuthContextType } from '../types'

@@ -27,76 +27,20 @@ const basename = import.meta.env.PROD ? '/budget-manager' : ''
 // Styles globaux pour prévenir le scroll horizontal sur mobile
 const globalStyles = (
   <GlobalStyles
-    styles={(theme) => ({
-      'html, body': {
-        overflowX: 'hidden',
-        margin: 0,
-        padding: 0,
-        width: '100%',
-        maxWidth: '100vw',
+    styles={{
+      '.MuiTooltip-tooltip': {
+        fontSize: '0.75rem',
       },
-      '#root': {
-        width: '100%',
-        maxWidth: '100vw',
-        overflowX: 'hidden',
-      },
-      // Prévenir le débordement horizontal sur tous les éléments
-      '*': {
-        boxSizing: 'border-box',
-      },
-      // Styles spéciaux pour mobile
-      [`@media (max-width: 500px)`]: {
-        'body': {
-          overflowX: 'hidden !important',
-        },
-        // Container principal
-        '.MuiContainer-root': {
-          padding: '0 8px !important',
-          maxWidth: '100% !important',
-          margin: '0 !important',
-        },
-        // Tables responsives
-        '.MuiTableContainer-root': {
-          overflowX: 'auto',
-          margin: '0 -8px',
-          padding: '0 8px',
-        },
-        // Cards et Paper
-        '.MuiCard-root, .MuiPaper-root': {
-          margin: '0',
-          maxWidth: '100%',
-        },
-        // Boutons et inputs
-        '.MuiButton-root': {
-          fontSize: '0.75rem !important',
-          padding: '6px 12px !important',
-        },
-        '.MuiTextField-root': {
-          width: '100% !important',
-        },
-        // AppBar mobile
-        '.MuiToolbar-root': {
-          minHeight: '56px !important',
-          padding: '0 8px !important',
-        },
-        // Dialogs sur mobile
-        '.MuiDialog-paper': {
-          margin: '8px !important',
-          maxWidth: 'calc(100vw - 16px) !important',
-        },
-        // Texte responsive
-        'h1, h2, h3, h4, h5, h6': {
-          fontSize: 'clamp(1rem, 4vw, 2rem) !important',
-          lineHeight: '1.2 !important',
-        },
-      },
-      // AppBar sticky
-      '.MuiAppBar-positionSticky': {
-        position: 'sticky !important',
-        top: '0 !important',
+      '.MuiSnackbar-root': {
         zIndex: '1100 !important'
       },
-    })}
+      '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+        borderColor: '#1976d2',
+      },
+      '&:hover .MuiOutlinedInput-notchedOutline': {
+        borderColor: '#1976d2',
+      },
+    }}
   />
 )
 
@@ -104,23 +48,35 @@ const globalStyles = (
 const createToastWithCloseButton = (message: string, type: 'success' | 'error' | 'loading' = 'success') => {
   return toast(
     (t) => (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-        <span style={{ marginRight: '8px' }}>{message}</span>
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'space-between', 
+        width: '100%',
+        gap: '8px'
+      }}>
+        <span style={{ flex: 1 }}>{message}</span>
         <IconButton
           size="small"
           onClick={() => toast.dismiss(t.id)}
-          style={{ color: 'inherit', padding: '2px' }}
+          style={{ 
+            color: 'inherit', 
+            padding: '2px',
+            minWidth: 'auto'
+          }}
+          aria-label="Fermer"
         >
-          <Close fontSize="small" />
+          <Close />
         </IconButton>
       </div>
     ),
     {
-      style: {
-        maxWidth: '400px',
-        padding: '12px 16px',
-      },
-      duration: 6000,
+      duration: 2500,
+      style: type === 'success' 
+        ? { background: '#4caf50', color: '#fff' }
+        : type === 'error'
+        ? { background: '#f44336', color: '#fff' }
+        : { background: '#363636', color: '#fff' }
     }
   )
 }
