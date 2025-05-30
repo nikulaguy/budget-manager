@@ -104,8 +104,8 @@ class GitHubStorageService {
 // Configuration par défaut (à ajuster selon vos besoins)
 const defaultConfig: GitHubConfig = {
   owner: 'nikulaguy', // Votre nom d'utilisateur GitHub
-  repo: 'budget', // Nom du repository
-  token: '', // À configurer via les variables d'environnement
+  repo: 'budget-data', // Nom du repository (modifiez si vous l'avez nommé différemment)
+  token: '', // À configurer via les variables d'environnement ou directement dans BudgetContext
   dataPath: 'data/app-data.json' // Chemin du fichier de données
 }
 

@@ -104,10 +104,16 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
 
   // Configuration du token GitHub au démarrage
   useEffect(() => {
-    // Pour la démo, on utilise un token GitHub personnalisé
-    // IMPORTANT: En production, ce token devrait être configuré via des variables d'environnement
-    const token = import.meta.env.VITE_GITHUB_TOKEN || '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'
-    configureGitHubToken(token)
+    // REMPLACEZ 'VOTRE_TOKEN_ICI' par votre vrai token GitHub Personal Access Token
+    // Exemple: const token = 'github_pat_11ABCD...'
+    const token = import.meta.env.VITE_GITHUB_TOKEN || 'VOTRE_TOKEN_ICI'
+    
+    if (token === 'VOTRE_TOKEN_ICI') {
+      console.warn('⚠️ Token GitHub non configuré. La synchronisation ne fonctionnera pas.')
+      console.warn('Consultez GITHUB_SETUP.md pour configurer la synchronisation.')
+    } else {
+      configureGitHubToken(token)
+    }
   }, [])
 
   // Chargement automatique des données au démarrage
