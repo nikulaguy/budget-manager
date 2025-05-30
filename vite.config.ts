@@ -6,8 +6,8 @@ export default defineConfig(({ command }) => ({
   plugins: [
     react()
   ],
-  // Base path différent selon l'environnement
-  base: command === 'build' ? '/budget/' : '/',
+  // Utiliser des chemins relatifs pour GitHub Pages
+  base: './',
   build: {
     outDir: 'dist',
     sourcemap: true
