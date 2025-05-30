@@ -1,0 +1,17 @@
+{
+  "name": "BudgetManager",
+  "short_name": "Budget",
+  "description": "Application de gestion de budget moderne et accessible",
+  "theme_color": "#1976d2",
+  "background_color": "#ffffff",
+  "display": "standalone",
+  "start_url": "./",
+  "scope": "./",
+  "icons": [
+    {
+      "src": "./budget-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+} 

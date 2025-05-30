@@ -1,0 +1,20 @@
+# Headers for GitHub Pages to set correct MIME types
+/*
+  # Cache static assets
+  Cache-Control: public, max-age=31536000
+
+# JavaScript files
+/assets/*.js
+  Content-Type: text/javascript
+
+# Module JavaScript files
+/assets/*.mjs
+  Content-Type: text/javascript
+
+# JSON files
+*.json
+  Content-Type: application/json
+
+# Web App Manifest
+/manifest.webmanifest
+  Content-Type: application/manifest+json 
