@@ -55,6 +55,11 @@ import { useBudget } from '../contexts/BudgetContext'
 import { defaultReferenceBudgets, getTotalBudgetAmount, getTotalSavingsAmount } from '../data/referenceBudgets'
 import { useAuth } from '../contexts/AuthContext'
 
+// Fonction utilitaire pour arrondir les nombres et éviter les problèmes de précision
+const roundToTwo = (num: number): number => {
+  return Math.round(num * 100) / 100
+}
+
 const HomePage: React.FC = () => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
@@ -95,18 +100,31 @@ const HomePage: React.FC = () => {
   // Date actuelle pour affichage
   const currentDate = new Date(currentYear, currentMonth - 1)
   
-  // Calcul des totaux basés sur les vrais budgets de référence
-  const totalBudgetReference = getTotalBudgetAmount()
-  const totalSavingsReference = getTotalSavingsAmount()
+  // Calcul des totaux basés sur les vraies données des budgets
+  const budgetsByCategory = monthlyBudgets.reduce((acc, budget) => {
+    if (!acc[budget.category]) {
+      acc[budget.category] = []
+    }
+    acc[budget.category].push(budget)
+    return acc
+  }, {} as Record<string, typeof monthlyBudgets>)
+
+  // Ordre des catégories
+  const categoryOrder = ['Courant', 'Mensuel', 'Annuel', 'Épargne']
+  const orderedCategories = categoryOrder.filter(cat => budgetsByCategory[cat])
+
+  // Calcul des totaux réels
+  const totalBudgetBudgets = monthlyBudgets.filter(b => b.category !== 'Épargne')
+  const totalSavingsBudgets = monthlyBudgets.filter(b => b.category === 'Épargne')
   
-  // Données de démonstration - en production, ces valeurs viendraient de la base de données
+  // Calcul des totaux réels avec arrondi pour éviter les problèmes de précision
   const budgetSummary = {
-    totalBudget: Math.round(totalBudgetReference),
-    totalSpent: Math.round(totalBudgetReference * 0.74), // 74% dépensé
-    totalRemaining: Math.round(totalBudgetReference * 0.26),
-    totalSavings: Math.round(totalSavingsReference),
-    savingsSpent: Math.round(totalSavingsReference * 0.12), // 12% utilisé
-    savingsRemaining: Math.round(totalSavingsReference * 0.88)
+    totalBudget: roundToTwo(totalBudgetBudgets.reduce((sum, b) => sum + b.referenceValue, 0)),
+    totalSpent: roundToTwo(totalBudgetBudgets.reduce((sum, b) => sum + b.spent, 0)),
+    totalRemaining: roundToTwo(totalBudgetBudgets.reduce((sum, b) => sum + b.remaining, 0)),
+    totalSavings: roundToTwo(totalSavingsBudgets.reduce((sum, b) => sum + b.referenceValue, 0)),
+    savingsSpent: roundToTwo(totalSavingsBudgets.reduce((sum, b) => sum + b.spent, 0)),
+    savingsRemaining: roundToTwo(totalSavingsBudgets.reduce((sum, b) => sum + b.remaining, 0))
   }
 
   const getProgressColor = (percentage: number) => {
@@ -116,22 +134,39 @@ const HomePage: React.FC = () => {
   }
 
   const handleNextMonth = () => {
-    setShowNextMonthDialog(true)
+    const today = new Date()
+    const currentDateToCheck = new Date(currentYear, currentMonth - 1)
+    const isCurrentMonth = currentDateToCheck.getMonth() === today.getMonth() && 
+                           currentDateToCheck.getFullYear() === today.getFullYear()
+    
+    if (isCurrentMonth) {
+      // Si on est sur le mois en cours, on montre le dialog pour passer au mois suivant avec réinitialisation
+      setShowNextMonthDialog(true)
+    } else {
+      // Sinon, navigation normale
+      const nextDate = addMonths(currentDate, 1)
+      setCurrentMonth(nextDate.getMonth() + 1)
+      setCurrentYear(nextDate.getFullYear())
+    }
   }
 
   const confirmNextMonth = () => {
     const nextDate = addMonths(currentDate, 1)
+    
+    // Réinitialiser tous les budgets et ajouter les restes du mois actuel
+    resetAllBudgets()
+    
+    // Logique pour ajouter les restes au mois suivant pourrait être ajoutée ici
+    
     setCurrentMonth(nextDate.getMonth() + 1)
     setCurrentYear(nextDate.getFullYear())
     setShowNextMonthDialog(false)
-    toastWithClose.success(`Passage au mois de ${format(nextDate, 'MMMM yyyy', { locale: fr })}`)
   }
 
   const handlePreviousMonth = () => {
     const prevDate = subMonths(currentDate, 1)
     setCurrentMonth(prevDate.getMonth() + 1)
     setCurrentYear(prevDate.getFullYear())
-    toastWithClose.success(`Retour au mois de ${format(prevDate, 'MMMM yyyy', { locale: fr })}`)
   }
 
   const handleAddExpense = (budgetName: string, fromMenu: boolean = false) => {
@@ -355,10 +390,10 @@ const HomePage: React.FC = () => {
         </Grid>
       </Grid>
 
-      {/* Tableau des budgets */}
-      <Card>
+      {/* En-tête des budgets avec boutons de contrôle */}
+      <Card sx={{ mb: 3 }}>
         <CardContent>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <Typography variant="h6">
               Budgets en cours - {currentMonthName}
             </Typography>
@@ -387,144 +422,185 @@ const HomePage: React.FC = () => {
               </Button>
             </Box>
           </Box>
-
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Budget</TableCell>
-                  <TableCell align="right">Référence</TableCell>
-                  {!isMobile && (
-                    <TableCell align="right">Dépensé</TableCell>
-                  )}
-                  <TableCell align="center">Restant / Progression</TableCell>
-                  <TableCell align="center">Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {monthlyBudgets.map((budget) => (
-                  <TableRow key={budget.id} hover>
-                    <TableCell sx={{ 
-                      minWidth: isMobile ? '120px' : 'auto',
-                      maxWidth: isMobile ? '120px' : 'auto'
-                    }}>
-                      <Box>
-                        <Typography 
-                          variant="body2" 
-                          fontWeight="medium"
-                          sx={{ 
-                            fontSize: isMobile ? '0.75rem' : '0.875rem',
-                            lineHeight: 1.2,
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: isMobile ? 'nowrap' : 'normal'
-                          }}
-                        >
-                          {budget.name}
-                        </Typography>
-                        <Typography 
-                          variant="caption" 
-                          color="textSecondary"
-                          sx={{ fontSize: isMobile ? '0.6rem' : '0.75rem' }}
-                        >
-                          {budget.category}
-                        </Typography>
-                      </Box>
-                    </TableCell>
-                    <TableCell align="right" sx={{ minWidth: '60px' }}>
-                      <Typography 
-                        variant="body2"
-                        sx={{ fontSize: isMobile ? '0.75rem' : '0.875rem' }}
-                      >
-                        {budget.referenceValue}€
-                      </Typography>
-                    </TableCell>
-                    {!isMobile && (
-                      <TableCell align="right">
-                        <Typography variant="body2">
-                          {budget.spent}€
-                        </Typography>
-                      </TableCell>
-                    )}
-                    <TableCell align="center" sx={{ minWidth: isMobile ? '80px' : '120px' }}>
-                      <Box sx={{ width: '100%' }}>
-                        <Typography
-                          variant="body2"
-                          color={budget.remaining < 0 ? 'error.main' : 'text.primary'}
-                          sx={{ 
-                            fontSize: isMobile ? '0.75rem' : '0.875rem',
-                            fontWeight: 'medium',
-                            mb: 0.5 
-                          }}
-                        >
-                          {budget.remaining}€
-                        </Typography>
-                        <LinearProgress
-                          variant="determinate"
-                          value={Math.min(budget.percentage, 100)}
-                          color={getProgressColor(budget.percentage)}
-                          sx={{ 
-                            height: isMobile ? 4 : 6, 
-                            borderRadius: 3,
-                            mb: 0.5
-                          }}
-                        />
-                        <Typography 
-                          variant="caption" 
-                          sx={{ 
-                            fontSize: isMobile ? '0.6rem' : '0.75rem',
-                            display: 'block' 
-                          }}
-                        >
-                          {Math.round(budget.percentage)}%
-                        </Typography>
-                      </Box>
-                    </TableCell>
-                    <TableCell align="center" sx={{ width: isMobile ? '40px' : 'auto' }}>
-                      {isMobile ? (
-                        <IconButton
-                          size="small"
-                          onClick={(event) => handleOpenMenu(event, budget.name)}
-                          aria-label={`Actions pour ${budget.name}`}
-                        >
-                          <MoreVert />
-                        </IconButton>
-                      ) : (
-                        <Box sx={{ display: 'flex', gap: 0.5 }}>
-                          <IconButton
-                            size="small"
-                            onClick={(event) => handleAddExpense(budget.name, false)}
-                            aria-label={`Ajouter dépense pour ${budget.name}`}
-                            color="primary"
-                          >
-                            <Add />
-                          </IconButton>
-                          <IconButton
-                            size="small"
-                            onClick={(event) => handleResetBudget(budget.name, false)}
-                            aria-label={`Réinitialiser ${budget.name}`}
-                            color="secondary"
-                          >
-                            <Refresh />
-                          </IconButton>
-                          <IconButton
-                            size="small"
-                            onClick={(event) => handleViewExpenses(budget.name, false)}
-                            aria-label={`Voir dépenses de ${budget.name}`}
-                            color="info"
-                          >
-                            <Visibility />
-                          </IconButton>
-                        </Box>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
         </CardContent>
       </Card>
+
+      {/* Budgets organisés par catégories */}
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+        {orderedCategories.map((categoryName) => {
+          const categoryBudgets = budgetsByCategory[categoryName]
+          const categoryTotal = categoryBudgets.reduce((sum, budget) => sum + budget.referenceValue, 0)
+          const categorySpent = categoryBudgets.reduce((sum, budget) => sum + budget.spent, 0)
+          const categoryRemaining = categoryBudgets.reduce((sum, budget) => sum + budget.remaining, 0)
+
+          const getCategoryColor = (category: string) => {
+            switch (category) {
+              case 'Courant': return 'primary'
+              case 'Mensuel': return 'secondary'
+              case 'Annuel': return 'warning'
+              case 'Épargne': return 'success'
+              default: return 'default'
+            }
+          }
+
+          return (
+            <Card key={categoryName}>
+              <CardContent>
+                {/* En-tête de catégorie */}
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <Typography variant="h6">
+                      {categoryName}
+                    </Typography>
+                    <Chip
+                      label={`${categoryBudgets.length} budget${categoryBudgets.length > 1 ? 's' : ''}`}
+                      size="small"
+                      color={getCategoryColor(categoryName) as any}
+                    />
+                  </Box>
+                  <Box sx={{ textAlign: 'right' }}>
+                    <Typography variant="body2" color="textSecondary">
+                      {categorySpent}€ / {categoryTotal}€
+                    </Typography>
+                    <Typography variant="caption" color="textSecondary">
+                      Restant: {categoryRemaining}€
+                    </Typography>
+                  </Box>
+                </Box>
+
+                {/* Tableau des budgets de cette catégorie */}
+                <TableContainer>
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell sx={{ width: isMobile ? '25%' : '30%' }}>Budget</TableCell>
+                        <TableCell align="right" sx={{ width: isMobile ? '15%' : '12%' }}>Référence</TableCell>
+                        {!isMobile && (
+                          <TableCell align="right" sx={{ width: '12%' }}>Dépensé</TableCell>
+                        )}
+                        <TableCell align="center" sx={{ width: isMobile ? '35%' : '25%' }}>Restant / Progression</TableCell>
+                        <TableCell align="center" sx={{ width: isMobile ? '25%' : '21%' }}>Actions</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {categoryBudgets.map((budget) => (
+                        <TableRow key={budget.id} hover>
+                          <TableCell sx={{ 
+                            width: isMobile ? '25%' : '30%',
+                            minWidth: isMobile ? '120px' : 'auto',
+                            maxWidth: isMobile ? '120px' : 'auto'
+                          }}>
+                            <Typography 
+                              variant="body2" 
+                              fontWeight="medium"
+                              sx={{ 
+                                fontSize: isMobile ? '0.75rem' : '0.875rem',
+                                lineHeight: 1.2,
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: isMobile ? 'nowrap' : 'normal'
+                              }}
+                            >
+                              {budget.name}
+                            </Typography>
+                          </TableCell>
+                          <TableCell align="right" sx={{ width: isMobile ? '15%' : '12%', minWidth: '60px' }}>
+                            <Typography 
+                              variant="body2"
+                              sx={{ fontSize: isMobile ? '0.75rem' : '0.875rem' }}
+                            >
+                              {budget.referenceValue}€
+                            </Typography>
+                          </TableCell>
+                          {!isMobile && (
+                            <TableCell align="right" sx={{ width: '12%' }}>
+                              <Typography variant="body2">
+                                {budget.spent}€
+                              </Typography>
+                            </TableCell>
+                          )}
+                          <TableCell align="center" sx={{ width: isMobile ? '35%' : '25%', minWidth: isMobile ? '80px' : '120px' }}>
+                            <Box sx={{ width: '100%' }}>
+                              <Typography
+                                variant="body2"
+                                color={budget.remaining < 0 ? 'error.main' : 'text.primary'}
+                                sx={{ 
+                                  fontSize: isMobile ? '0.75rem' : '0.875rem',
+                                  fontWeight: 'medium',
+                                  mb: 0.5 
+                                }}
+                              >
+                                {budget.remaining}€
+                              </Typography>
+                              <LinearProgress
+                                variant="determinate"
+                                value={Math.min(budget.percentage, 100)}
+                                color={getProgressColor(budget.percentage)}
+                                sx={{ 
+                                  height: isMobile ? 4 : 6, 
+                                  borderRadius: 3,
+                                  mb: 0.5
+                                }}
+                              />
+                              <Typography 
+                                variant="caption" 
+                                sx={{ 
+                                  fontSize: isMobile ? '0.6rem' : '0.75rem',
+                                  display: 'block' 
+                                }}
+                              >
+                                {Math.round(budget.percentage)}%
+                              </Typography>
+                            </Box>
+                          </TableCell>
+                          <TableCell align="center" sx={{ width: isMobile ? '25%' : '21%', minWidth: isMobile ? '40px' : 'auto' }}>
+                            {isMobile ? (
+                              <IconButton
+                                size="small"
+                                onClick={(event) => handleOpenMenu(event, budget.name)}
+                                aria-label={`Actions pour ${budget.name}`}
+                              >
+                                <MoreVert />
+                              </IconButton>
+                            ) : (
+                              <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
+                                <IconButton
+                                  size="small"
+                                  onClick={(event) => handleAddExpense(budget.name, false)}
+                                  aria-label={`Ajouter dépense pour ${budget.name}`}
+                                  color="primary"
+                                >
+                                  <Add />
+                                </IconButton>
+                                <IconButton
+                                  size="small"
+                                  onClick={(event) => handleResetBudget(budget.name, false)}
+                                  aria-label={`Réinitialiser ${budget.name}`}
+                                  color="secondary"
+                                >
+                                  <Refresh />
+                                </IconButton>
+                                <IconButton
+                                  size="small"
+                                  onClick={(event) => handleViewExpenses(budget.name, false)}
+                                  aria-label={`Voir dépenses de ${budget.name}`}
+                                  color="info"
+                                >
+                                  <Visibility />
+                                </IconButton>
+                              </Box>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </CardContent>
+            </Card>
+          )
+        })}
+      </Box>
 
       {/* Menu contextuel pour mobile */}
       <Menu
@@ -663,17 +739,17 @@ const HomePage: React.FC = () => {
               <Table>
                 <TableHead>
                   <TableRow>
-                    <TableCell>Description</TableCell>
-                    <TableCell>Utilisateur</TableCell>
-                    <TableCell>Date</TableCell>
-                    <TableCell align="right">Montant</TableCell>
-                    <TableCell align="center">Actions</TableCell>
+                    <TableCell sx={{ width: '30%' }}>Description</TableCell>
+                    <TableCell sx={{ width: '25%' }}>Utilisateur</TableCell>
+                    <TableCell sx={{ width: '20%' }}>Date</TableCell>
+                    <TableCell align="right" sx={{ width: '15%' }}>Montant</TableCell>
+                    <TableCell align="center" sx={{ width: '10%' }}>Actions</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {budgetExpenses[selectedBudget].map((expense) => (
                     <TableRow key={expense.id} hover>
-                      <TableCell>
+                      <TableCell sx={{ width: '30%' }}>
                         <Typography variant="body2" fontWeight="medium">
                           {expense.description}
                         </Typography>
@@ -681,7 +757,7 @@ const HomePage: React.FC = () => {
                           {expense.category}
                         </Typography>
                       </TableCell>
-                      <TableCell>
+                      <TableCell sx={{ width: '25%' }}>
                         <Typography variant="body2">
                           {expense.userName}
                         </Typography>
@@ -689,7 +765,7 @@ const HomePage: React.FC = () => {
                           {expense.userEmail}
                         </Typography>
                       </TableCell>
-                      <TableCell>
+                      <TableCell sx={{ width: '20%' }}>
                         <Typography variant="body2">
                           {format(expense.date, 'dd/MM/yyyy')}
                         </Typography>
@@ -697,12 +773,12 @@ const HomePage: React.FC = () => {
                           {format(expense.date, 'HH:mm')}
                         </Typography>
                       </TableCell>
-                      <TableCell align="right">
+                      <TableCell align="right" sx={{ width: '15%' }}>
                         <Typography variant="body2" fontWeight="medium">
                           {expense.amount.toFixed(2)}€
                         </Typography>
                       </TableCell>
-                      <TableCell align="center">
+                      <TableCell align="center" sx={{ width: '10%' }}>
                         <IconButton 
                           size="small" 
                           color="error" 

@@ -30,70 +30,39 @@ import {
   NavigateBefore,
   NavigateNext
 } from '@mui/icons-material'
-import { format, subMonths, addMonths } from 'date-fns'
+import { format, subMonths, addMonths, isSameMonth, isSameYear } from 'date-fns'
 import { fr } from 'date-fns/locale'
+import { useBudget } from '../contexts/BudgetContext'
 
 const HistoryPage: React.FC = () => {
   const [currentHistoryDate, setCurrentHistoryDate] = useState(subMonths(new Date(), 1))
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('all')
-
-  // Données de démonstration pour l'historique
-  const mockExpenses = [
-    {
-      id: '1',
-      description: 'Courses Carrefour',
-      amount: 85.50,
-      date: new Date(2024, 11, 15),
-      budget: 'Alimentation Entretien',
-      category: 'Courant',
-      author: 'Nicolas Guy'
-    },
-    {
-      id: '2',
-      description: 'Essence voiture',
-      amount: 65.00,
-      date: new Date(2024, 11, 12),
-      budget: 'Transport',
-      category: 'Courant',
-      author: 'Alix Guy'
-    },
-    {
-      id: '3',
-      description: 'Facture électricité',
-      amount: 95.30,
-      date: new Date(2024, 11, 10),
-      budget: 'Electricité/Péage VOITURE',
-      category: 'Mensuel',
-      author: 'Nicolas Guy'
-    },
-    {
-      id: '4',
-      description: 'Restaurant famille',
-      amount: 45.00,
-      date: new Date(2024, 11, 8),
-      budget: 'Spectacles',
-      category: 'Mensuel',
-      author: 'Alix Guy'
-    },
-    {
-      id: '5',
-      description: 'Médicaments',
-      amount: 28.90,
-      date: new Date(2024, 11, 5),
-      budget: 'Santé',
-      category: 'Mensuel',
-      author: 'Nicolas Guy'
-    }
-  ]
+  
+  // Récupérer les vraies données de dépenses depuis le context
+  const { budgetExpenses, monthlyBudgets } = useBudget()
 
   const categories = ['all', 'Courant', 'Mensuel', 'Annuel', 'Épargne']
 
-  const filteredExpenses = mockExpenses.filter(expense => {
+  // Convertir toutes les dépenses en un seul tableau avec le mois/année
+  const allExpenses = Object.entries(budgetExpenses).flatMap(([budgetName, expenses]) => 
+    expenses.map(expense => ({
+      ...expense,
+      budget: budgetName
+    }))
+  )
+
+  // Filtrer les dépenses par mois sélectionné et critères de recherche
+  const filteredExpenses = allExpenses.filter(expense => {
+    const expenseDate = new Date(expense.date)
+    const isSameMonthYear = isSameMonth(expenseDate, currentHistoryDate) && 
+                           isSameYear(expenseDate, currentHistoryDate)
+    
     const matchesSearch = expense.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          expense.budget.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesCategory = selectedCategory === 'all' || expense.category === selectedCategory
-    return matchesSearch && matchesCategory
+    
+    return isSameMonthYear && matchesSearch && matchesCategory
   })
 
   const totalExpenses = filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0)
@@ -323,7 +292,7 @@ const HistoryPage: React.FC = () => {
                       </TableCell>
                       <TableCell align="center">
                         <Typography variant="body2">
-                          {expense.author}
+                          {expense.userName}
                         </Typography>
                       </TableCell>
                       <TableCell align="center">

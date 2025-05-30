@@ -1,6 +1,11 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react'
 import { defaultReferenceBudgets } from '../data/referenceBudgets'
 
+// Fonction utilitaire pour arrondir les nombres et éviter les problèmes de précision
+const roundToTwo = (num: number): number => {
+  return Math.round(num * 100) / 100
+}
+
 interface Expense {
   id: string
   description: string
@@ -69,10 +74,9 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
   const [globalAddCategoryOpen, setGlobalAddCategoryOpen] = useState(false)
   const [selectedBudgetForExpense, setSelectedBudgetForExpense] = useState<string | null>(null)
 
-  // Données des budgets mensuels
+  // Données des budgets mensuels - TOUTES les catégories incluses
   const [monthlyBudgets, setMonthlyBudgets] = useState<MonthlyBudget[]>(() => 
     defaultReferenceBudgets
-      .filter(budget => budget.category !== 'Épargne')
       .map((budget, index) => {
         return {
           id: `budget-${index}`,
@@ -86,7 +90,7 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
       })
   )
 
-  // Données des dépenses - complètement vides
+  // Données des dépenses - complètement vides (aucun historique)
   const [budgetExpenses, setBudgetExpenses] = useState<Record<string, Expense[]>>({})
 
   const openAddExpenseDialog = (budgetName?: string) => {
@@ -125,15 +129,15 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
     setMonthlyBudgets(prev => 
       prev.map(budget => {
         if (budget.name === budgetName) {
-          const newSpent = budget.spent + expense.amount
-          const newRemaining = budget.referenceValue - newSpent
-          const newPercentage = (newSpent / budget.referenceValue) * 100
+          const newSpent = roundToTwo(budget.spent + expense.amount)
+          const newRemaining = roundToTwo(budget.referenceValue - newSpent)
+          const newPercentage = roundToTwo((newSpent / budget.referenceValue) * 100)
           
           return {
             ...budget,
             spent: newSpent,
             remaining: newRemaining,
-            percentage: Math.round(newPercentage * 100) / 100
+            percentage: newPercentage
           }
         }
         return budget
@@ -155,15 +159,15 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
     setMonthlyBudgets(prev => 
       prev.map(budget => {
         if (budget.name === budgetName) {
-          const newSpent = budget.spent - expense.amount
-          const newRemaining = budget.referenceValue - newSpent
-          const newPercentage = (newSpent / budget.referenceValue) * 100
+          const newSpent = roundToTwo(Math.max(0, budget.spent - expense.amount))
+          const newRemaining = roundToTwo(budget.referenceValue - newSpent)
+          const newPercentage = roundToTwo(Math.max(0, (newSpent / budget.referenceValue) * 100))
           
           return {
             ...budget,
-            spent: Math.max(0, newSpent), // Éviter les valeurs négatives
+            spent: newSpent,
             remaining: newRemaining,
-            percentage: Math.max(0, Math.round(newPercentage * 100) / 100)
+            percentage: newPercentage
           }
         }
         return budget

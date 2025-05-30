@@ -37,7 +37,7 @@ export const toastWithClose = {
           background: '#4caf50',
           color: '#fff',
         },
-        duration: 8000, // Durée plus longue pour laisser le temps de lire et fermer
+        duration: 2500, // Durée réduite à 2,5 secondes
       }
     )
   },
@@ -74,7 +74,7 @@ export const toastWithClose = {
           background: '#f44336',
           color: '#fff',
         },
-        duration: 8000,
+        duration: 2500, // Durée réduite à 2,5 secondes
       }
     )
   },
@@ -111,7 +111,7 @@ export const toastWithClose = {
           background: '#363636',
           color: '#fff',
         },
-        duration: 8000,
+        duration: 2500, // Durée réduite à 2,5 secondes
       }
     )
   }

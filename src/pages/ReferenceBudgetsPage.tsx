@@ -246,26 +246,26 @@ const ReferenceBudgetsPage: React.FC = () => {
                     <Table>
                       <TableHead>
                         <TableRow>
-                          <TableCell>Nom du budget</TableCell>
-                          <TableCell align="right">Montant</TableCell>
-                          <TableCell align="center">Type</TableCell>
-                          <TableCell align="center">Actions</TableCell>
+                          <TableCell sx={{ width: '40%' }}>Nom du budget</TableCell>
+                          <TableCell align="right" sx={{ width: '20%' }}>Montant</TableCell>
+                          <TableCell align="center" sx={{ width: '20%' }}>Type</TableCell>
+                          <TableCell align="center" sx={{ width: '20%' }}>Actions</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
                         {categoryBudgets.map((budget, index) => (
                           <TableRow key={`${budget.name}-${index}`} hover>
-                            <TableCell>
+                            <TableCell sx={{ width: '40%' }}>
                               <Typography variant="body2" fontWeight="medium">
                                 {budget.name}
                               </Typography>
                             </TableCell>
-                            <TableCell align="right">
+                            <TableCell align="right" sx={{ width: '20%' }}>
                               <Typography variant="body2" fontWeight="medium">
                                 {formatCurrency(budget.value)}
                               </Typography>
                             </TableCell>
-                            <TableCell align="center">
+                            <TableCell align="center" sx={{ width: '20%' }}>
                               <Chip
                                 label={budget.isDefault ? 'Par défaut' : 'Personnalisé'}
                                 size="small"
@@ -273,7 +273,7 @@ const ReferenceBudgetsPage: React.FC = () => {
                                 variant={budget.isDefault ? 'outlined' : 'filled'}
                               />
                             </TableCell>
-                            <TableCell align="center">
+                            <TableCell align="center" sx={{ width: '20%' }}>
                               <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
                                 <IconButton
                                   size="small"
