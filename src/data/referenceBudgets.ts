@@ -1,5 +1,10 @@
 import { BudgetCategory } from '../types'
 
+// Fonction utilitaire pour arrondir les nombres et éviter les problèmes de précision
+const roundToTwo = (num: number): number => {
+  return Math.round(num * 100) / 100
+}
+
 // Catégories de budget par défaut
 export const defaultCategories: Omit<BudgetCategory, 'id' | 'createdAt' | 'updatedAt'>[] = [
   { name: 'Courant', type: 'Courant' },
@@ -64,7 +69,7 @@ export const calculateTotalsByCategory = () => {
 
   defaultReferenceBudgets.forEach(budget => {
     if (budget.category && totals.hasOwnProperty(budget.category)) {
-      totals[budget.category as keyof typeof totals] += budget.value
+      totals[budget.category as keyof typeof totals] = roundToTwo(totals[budget.category as keyof typeof totals] + budget.value)
     }
   })
 
@@ -74,11 +79,11 @@ export const calculateTotalsByCategory = () => {
 // Total général des budgets (hors épargne)
 export const getTotalBudgetAmount = () => {
   const totals = calculateTotalsByCategory()
-  return totals.Courant + totals.Mensuel + (totals.Annuel / 12) // Annuel divisé par 12 pour avoir le montant mensuel
+  return roundToTwo(totals.Courant + totals.Mensuel + (totals.Annuel / 12)) // Annuel divisé par 12 pour avoir le montant mensuel
 }
 
 // Total de l'épargne
 export const getTotalSavingsAmount = () => {
   const totals = calculateTotalsByCategory()
-  return totals.Épargne
+  return roundToTwo(totals.Épargne)
 } 

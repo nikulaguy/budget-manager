@@ -418,9 +418,9 @@ const HomePage: React.FC = () => {
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
         {orderedCategories.map((categoryName) => {
           const categoryBudgets = budgetsByCategory[categoryName]
-          const categoryTotal = categoryBudgets.reduce((sum, budget) => sum + budget.referenceValue, 0)
-          const categorySpent = categoryBudgets.reduce((sum, budget) => sum + budget.spent, 0)
-          const categoryRemaining = categoryBudgets.reduce((sum, budget) => sum + budget.remaining, 0)
+          const categoryTotal = roundToTwo(categoryBudgets.reduce((sum, budget) => sum + budget.referenceValue, 0))
+          const categorySpent = roundToTwo(categoryBudgets.reduce((sum, budget) => sum + budget.spent, 0))
+          const categoryRemaining = roundToTwo(categoryBudgets.reduce((sum, budget) => sum + budget.remaining, 0))
 
           const getCategoryColor = (category: string) => {
             switch (category) {

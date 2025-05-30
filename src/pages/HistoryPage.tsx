@@ -34,6 +34,11 @@ import { format, subMonths, addMonths, isSameMonth, isSameYear } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { useBudget } from '../contexts/BudgetContext'
 
+// Fonction utilitaire pour arrondir les nombres et éviter les problèmes de précision
+const roundToTwo = (num: number): number => {
+  return Math.round(num * 100) / 100
+}
+
 const HistoryPage: React.FC = () => {
   const [currentHistoryDate, setCurrentHistoryDate] = useState(subMonths(new Date(), 1))
   const [searchTerm, setSearchTerm] = useState('')
@@ -65,7 +70,7 @@ const HistoryPage: React.FC = () => {
     return isSameMonthYear && matchesSearch && matchesCategory
   })
 
-  const totalExpenses = filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0)
+  const totalExpenses = roundToTwo(filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0))
 
   const handlePreviousMonth = () => {
     setCurrentHistoryDate(subMonths(currentHistoryDate, 1))
@@ -159,7 +164,7 @@ const HistoryPage: React.FC = () => {
                 Dépense moyenne
               </Typography>
               <Typography variant="h4">
-                {filteredExpenses.length > 0 ? formatCurrency(totalExpenses / filteredExpenses.length) : '0€'}
+                {filteredExpenses.length > 0 ? formatCurrency(roundToTwo(totalExpenses / filteredExpenses.length)) : '0€'}
               </Typography>
             </CardContent>
           </Card>
