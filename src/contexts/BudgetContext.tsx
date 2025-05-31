@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react'
 import { defaultReferenceBudgets, isCategoryCumulative } from '../data/referenceBudgets'
-import { githubStorage, configureGitHubToken, AppData } from '../services/githubStorage'
+import { hybridSync } from '../services/hybridSync'
 import { toastWithClose } from '../utils/toast'
 
 // Fonction utilitaire pour arrondir les nombres et éviter les problèmes de précision
@@ -8,7 +8,7 @@ const roundToTwo = (num: number): number => {
   return Math.round(num * 100) / 100
 }
 
-interface Expense {
+export interface Expense {
   id: string
   description: string
   amount: number
@@ -18,7 +18,7 @@ interface Expense {
   userEmail: string
 }
 
-interface MonthlyBudget {
+export interface MonthlyBudget {
   id: string
   name: string
   referenceValue: number
@@ -50,6 +50,7 @@ interface BudgetContextType {
   deleteExpense: (budgetName: string, expenseId: string) => void
   resetBudget: (budgetName: string) => void
   resetAllBudgets: () => void
+  resetToDefaults: () => void
   // Nouvelle fonction pour passer au mois suivant avec logique cumulative
   moveToNextMonth: () => void
   // Fonctions pour la synchronisation GitHub
@@ -83,68 +84,81 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
   const [globalAddCategoryOpen, setGlobalAddCategoryOpen] = useState(false)
   const [selectedBudgetForExpense, setSelectedBudgetForExpense] = useState<string | null>(null)
 
-  // Données des budgets mensuels - TOUTES les catégories incluses
-  const [monthlyBudgets, setMonthlyBudgets] = useState<MonthlyBudget[]>(() => 
-    defaultReferenceBudgets
-      .map((budget, index) => {
-        return {
-          id: `budget-${index}`,
-          name: budget.name,
-          referenceValue: budget.value,
-          spent: 0,
-          remaining: budget.value,
-          category: budget.category,
-          percentage: 0
-        }
-      })
-  )
+  // Données des budgets mensuels - chargés depuis le service hybride ou défauts
+  const [monthlyBudgets, setMonthlyBudgets] = useState<MonthlyBudget[]>(() => {
+    console.log('🔍 Initialisation des budgets...')
+    
+    // Création des budgets par défaut
+    const defaultBudgets = defaultReferenceBudgets.map((budget, index) => ({
+      id: `budget-${index}`,
+      name: budget.name,
+      referenceValue: budget.value,
+      spent: 0,
+      remaining: budget.value,
+      category: budget.category,
+      percentage: 0
+    }))
+    
+    console.log('📋 Budgets par défaut créés:', {
+      total: defaultBudgets.length,
+      categories: [...new Set(defaultBudgets.map((b: MonthlyBudget) => b.category))],
+      epargneCount: defaultBudgets.filter((b: MonthlyBudget) => b.category === 'Épargne').length
+    })
+    
+    return defaultBudgets
+  })
 
-  // Données des dépenses - complètement vides (aucun historique)
+  // Données des dépenses - initialisées vides, chargées par le service hybride
   const [budgetExpenses, setBudgetExpenses] = useState<Record<string, Expense[]>>({})
 
-  // Configuration du token GitHub au démarrage
+  // Charger les données depuis le service hybride après l'initialisation
   useEffect(() => {
-    // REMPLACEZ 'VOTRE_TOKEN_ICI' par votre vrai token GitHub Personal Access Token
-    // Exemple: const token = 'github_pat_11ABCD...'
-    const token = import.meta.env.VITE_GITHUB_TOKEN || ''
-    
-    if (token) {
-      // Configurer le token GitHub
-      configureGitHubToken(token)
-      console.log('✅ Token GitHub configuré pour la synchronisation')
-    } else {
-      console.warn('⚠️ Token GitHub non configuré. Créez un fichier .env avec VITE_GITHUB_TOKEN=votre_token')
+    const loadHybridData = async () => {
+      try {
+        const data = await hybridSync.loadData()
+        if (data) {
+          if (data.budgets && data.budgets.length > 0) {
+            setMonthlyBudgets(data.budgets)
+          }
+          if (data.expenses) {
+            setBudgetExpenses(data.expenses)
+          }
+          console.log('✅ Données chargées depuis le service hybride')
+        }
+      } catch (error) {
+        console.error('⚠️ Erreur lors du chargement hybride, utilisation des données par défaut:', error)
+      }
     }
+
+    // Attendre un peu que le service hybride soit initialisé
+    setTimeout(loadHybridData, 100)
   }, [])
 
-  // Chargement automatique des données au démarrage
+  // Configuration et initialisation du service hybride au démarrage
   useEffect(() => {
-    loadFromGitHub()
+    const initHybridSync = async () => {
+      await hybridSync.init()
+      console.log('💾 Service de synchronisation hybride initialisé')
+    }
+    
+    initHybridSync()
   }, [])
+
+  // Sauvegarde automatique après chaque modification
+  const autoSave = async (newBudgets: MonthlyBudget[], newExpenses: Record<string, Expense[]>) => {
+    // Le service hybride gère automatiquement localStorage + GitHub
+    await hybridSync.saveData(newBudgets, newExpenses)
+  }
 
   const loadFromGitHub = async () => {
     setIsLoading(true)
     try {
-      const data = await githubStorage.loadData()
+      const data = await hybridSync.loadData()
+      
       if (data) {
-        // Reconstruire les budgets avec les données sauvegardées
-        if (data.budgets) {
-          setMonthlyBudgets(data.budgets)
-        }
-        
-        // Reconstruire les dépenses avec les bonnes dates
-        if (data.expenses) {
-          const reconstructedExpenses: Record<string, Expense[]> = {}
-          for (const [budgetName, expenses] of Object.entries(data.expenses)) {
-            reconstructedExpenses[budgetName] = expenses.map(expense => ({
-              ...expense,
-              date: new Date(expense.date) // Reconvertir les dates
-            }))
-          }
-          setBudgetExpenses(reconstructedExpenses)
-        }
-        
-        toastWithClose.success('Données chargées depuis GitHub')
+        setMonthlyBudgets(data.budgets)
+        setBudgetExpenses(data.expenses)
+        toastWithClose.success('Données chargées depuis le cloud')
       }
     } catch (error) {
       console.error('Erreur lors du chargement:', error)
@@ -157,33 +171,13 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
   const saveToGitHub = async () => {
     setIsLoading(true)
     try {
-      const data: AppData = {
-        budgets: monthlyBudgets,
-        expenses: budgetExpenses,
-        users: {}, // Pour l'instant, on ne sauvegarde pas les utilisateurs
-        lastUpdated: new Date().toISOString()
-      }
-      
-      const success = await githubStorage.saveData(data)
-      if (success) {
-        toastWithClose.success('Données sauvegardées sur GitHub')
-      } else {
-        toastWithClose.error('Erreur lors de la sauvegarde')
-      }
+      await hybridSync.forceSyncToCloud(monthlyBudgets, budgetExpenses)
     } catch (error) {
       console.error('Erreur lors de la sauvegarde:', error)
       toastWithClose.error('Erreur lors de la sauvegarde des données')
     } finally {
       setIsLoading(false)
     }
-  }
-
-  // Sauvegarde automatique après chaque modification
-  const autoSave = async () => {
-    // Attendre un peu pour grouper les modifications
-    setTimeout(() => {
-      saveToGitHub()
-    }, 1000)
   }
 
   const openAddExpenseDialog = (budgetName?: string) => {
@@ -213,32 +207,34 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
     }
 
     // Ajouter la dépense à la liste
-    setBudgetExpenses(prev => ({
-      ...prev,
-      [budgetName]: [...(prev[budgetName] || []), newExpense]
-    }))
+    const newExpenses = {
+      ...budgetExpenses,
+      [budgetName]: [...(budgetExpenses[budgetName] || []), newExpense]
+    }
+    setBudgetExpenses(newExpenses)
 
     // Mettre à jour le budget correspondant
-    setMonthlyBudgets(prev => 
-      prev.map(budget => {
-        if (budget.name === budgetName) {
-          const newSpent = roundToTwo(budget.spent + expense.amount)
-          const newRemaining = roundToTwo(budget.referenceValue - newSpent)
-          const newPercentage = roundToTwo((newSpent / budget.referenceValue) * 100)
-          
-          return {
-            ...budget,
-            spent: newSpent,
-            remaining: newRemaining,
-            percentage: newPercentage
-          }
+    const newBudgets = monthlyBudgets.map(budget => {
+      if (budget.name === budgetName) {
+        const newSpent = roundToTwo(budget.spent + expense.amount)
+        const newRemaining = roundToTwo(budget.referenceValue - newSpent)
+        const newPercentage = roundToTwo((newSpent / budget.referenceValue) * 100)
+        
+        return {
+          ...budget,
+          spent: newSpent,
+          remaining: newRemaining,
+          percentage: newPercentage
         }
-        return budget
-      })
-    )
+      }
+      return budget
+    })
+    setMonthlyBudgets(newBudgets)
 
     // Sauvegarde automatique
-    autoSave()
+    autoSave(newBudgets, newExpenses)
+    
+    console.log('💰 Dépense ajoutée:', expense.amount, '€ pour', budgetName)
   }
 
   const deleteExpense = (budgetName: string, expenseId: string) => {
@@ -246,78 +242,114 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
     if (!expense) return
 
     // Supprimer la dépense
-    setBudgetExpenses(prev => ({
-      ...prev,
-      [budgetName]: prev[budgetName]?.filter(e => e.id !== expenseId) || []
-    }))
+    const newExpenses = {
+      ...budgetExpenses,
+      [budgetName]: budgetExpenses[budgetName]?.filter(e => e.id !== expenseId) || []
+    }
+    setBudgetExpenses(newExpenses)
 
     // Mettre à jour le budget correspondant
-    setMonthlyBudgets(prev => 
-      prev.map(budget => {
-        if (budget.name === budgetName) {
-          const newSpent = roundToTwo(Math.max(0, budget.spent - expense.amount))
-          const newRemaining = roundToTwo(budget.referenceValue - newSpent)
-          const newPercentage = roundToTwo(Math.max(0, (newSpent / budget.referenceValue) * 100))
-          
-          return {
-            ...budget,
-            spent: newSpent,
-            remaining: newRemaining,
-            percentage: newPercentage
-          }
+    const newBudgets = monthlyBudgets.map(budget => {
+      if (budget.name === budgetName) {
+        const newSpent = roundToTwo(Math.max(0, budget.spent - expense.amount))
+        const newRemaining = roundToTwo(budget.referenceValue - newSpent)
+        const newPercentage = roundToTwo(Math.max(0, (newSpent / budget.referenceValue) * 100))
+        
+        return {
+          ...budget,
+          spent: newSpent,
+          remaining: newRemaining,
+          percentage: newPercentage
         }
-        return budget
-      })
-    )
+      }
+      return budget
+    })
+    setMonthlyBudgets(newBudgets)
 
     // Sauvegarde automatique
-    autoSave()
+    autoSave(newBudgets, newExpenses)
 
     return expense
   }
 
   const resetBudget = (budgetName: string) => {
     // Supprimer toutes les dépenses du budget
-    setBudgetExpenses(prev => ({
-      ...prev,
+    const newExpenses = {
+      ...budgetExpenses,
       [budgetName]: []
-    }))
+    }
+    setBudgetExpenses(newExpenses)
 
     // Remettre le budget à sa valeur de référence
-    setMonthlyBudgets(prev => 
-      prev.map(budget => {
-        if (budget.name === budgetName) {
-          return {
-            ...budget,
-            spent: 0,
-            remaining: budget.referenceValue,
-            percentage: 0
-          }
+    const newBudgets = monthlyBudgets.map(budget => {
+      if (budget.name === budgetName) {
+        return {
+          ...budget,
+          spent: 0,
+          remaining: budget.referenceValue,
+          percentage: 0
         }
-        return budget
-      })
-    )
+      }
+      return budget
+    })
+    setMonthlyBudgets(newBudgets)
 
     // Sauvegarde automatique
-    autoSave()
+    autoSave(newBudgets, newExpenses)
   }
 
   const resetAllBudgets = () => {
     // Supprimer toutes les dépenses de tous les budgets
-    setBudgetExpenses({})
+    const newExpenses = {}
+    setBudgetExpenses(newExpenses)
 
     // Remettre tous les budgets à leurs valeurs de référence
-    setMonthlyBudgets(prev => 
-      prev.map(budget => ({
-        ...budget,
-        spent: 0,
-        remaining: budget.referenceValue,
-        percentage: 0
-      }))
-    )
+    const newBudgets = monthlyBudgets.map(budget => ({
+      ...budget,
+      spent: 0,
+      remaining: budget.referenceValue,
+      percentage: 0
+    }))
+    setMonthlyBudgets(newBudgets)
 
     // Sauvegarde automatique
-    autoSave()
+    autoSave(newBudgets, newExpenses)
+  }
+
+  const resetToDefaults = () => {
+    console.log('🔄 Réinitialisation complète vers les budgets par défaut')
+    
+    // Nettoyer complètement localStorage
+    localStorage.removeItem('budget-app-budgets')
+    localStorage.removeItem('budget-app-expenses')
+    localStorage.removeItem('budget-app-last-updated')
+    
+    // Créer les budgets par défaut
+    const defaultBudgets = defaultReferenceBudgets.map((budget, index) => ({
+      id: `budget-${index}`,
+      name: budget.name,
+      referenceValue: budget.value,
+      spent: 0,
+      remaining: budget.value,
+      category: budget.category,
+      percentage: 0
+    }))
+    
+    // Remettre à zéro les dépenses
+    const emptyExpenses = {}
+    
+    // Mettre à jour les states
+    setMonthlyBudgets(defaultBudgets)
+    setBudgetExpenses(emptyExpenses)
+    
+    // Sauvegarder immédiatement
+    autoSave(defaultBudgets, emptyExpenses)
+    
+    console.log('✅ Réinitialisation terminée:', {
+      budgets: defaultBudgets.length,
+      categories: [...new Set(defaultBudgets.map(b => b.category))],
+      epargneCount: defaultBudgets.filter(b => b.category === 'Épargne').length
+    })
   }
 
   const moveToNextMonth = () => {
@@ -357,14 +389,15 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
     setMonthlyBudgets(newBudgets)
 
     // Supprimer toutes les dépenses du mois précédent
-    setBudgetExpenses({})
+    const newExpenses = {}
+    setBudgetExpenses(newExpenses)
 
     // Mettre à jour la date
     setCurrentMonth(nextDate.getMonth() + 1) // Reconvertir en 1-based
     setCurrentYear(nextDate.getFullYear())
 
     // Sauvegarde automatique
-    autoSave()
+    autoSave(newBudgets, newExpenses)
 
     toastWithClose.success('Passage au mois suivant effectué avec report des budgets cumulatifs')
   }
@@ -388,6 +421,7 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
     deleteExpense,
     resetBudget,
     resetAllBudgets,
+    resetToDefaults,
     moveToNextMonth,
     loadFromGitHub,
     saveToGitHub,

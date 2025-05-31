@@ -87,6 +87,7 @@ const SettingsPage: React.FC = () => {
   const { 
     saveToGitHub, 
     loadFromGitHub, 
+    resetToDefaults,
     isLoading 
   } = useBudget()
   
@@ -162,6 +163,13 @@ const SettingsPage: React.FC = () => {
 
   const handleLoadFromGitHub = async () => {
     await loadFromGitHub()
+  }
+
+  const handleResetToDefaults = () => {
+    if (window.confirm('Êtes-vous sûr de vouloir réinitialiser tous les budgets et supprimer toutes les dépenses ? Cette action est irréversible.')) {
+      resetToDefaults()
+      toastWithClose.success('Application réinitialisée avec les budgets par défaut')
+    }
   }
 
   // Fonction pour sauvegarder le token GitHub
@@ -811,6 +819,25 @@ const SettingsPage: React.FC = () => {
                         {isLoading ? 'Chargement...' : 'Charger'}
                       </Button>
                     </Box>
+                  </ListItem>
+
+                  <ListItem>
+                    <ListItemIcon>
+                      <Settings />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary="Réinitialiser l'application"
+                      secondary="Remettre les budgets par défaut et supprimer toutes les dépenses"
+                    />
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      startIcon={<Delete />}
+                      onClick={handleResetToDefaults}
+                      size="small"
+                    >
+                      Réinitialiser
+                    </Button>
                   </ListItem>
 
                   <Divider />

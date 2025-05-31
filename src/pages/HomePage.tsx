@@ -107,6 +107,16 @@ const HomePage: React.FC = () => {
     return acc
   }, {} as Record<string, typeof monthlyBudgets>)
 
+  // DEBUG: Afficher l'état des budgets seulement si aucun budget
+  if (monthlyBudgets.length === 0) {
+    console.log('🏠 HomePage - AUCUN BUDGET TROUVÉ:', { 
+      monthlyBudgets, 
+      budgetsByCategory, 
+      budgetExpenses,
+      monthlyBudgetsLength: monthlyBudgets.length 
+    })
+  }
+
   // Ordre des catégories
   const categoryOrder = ['Courant', 'Mensuel', 'Annuel', 'Épargne']
   const orderedCategories = categoryOrder.filter(cat => budgetsByCategory[cat])
