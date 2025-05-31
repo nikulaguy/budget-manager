@@ -43,7 +43,6 @@ import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { useBudget } from '../../contexts/BudgetContext'
 import BudgetLogo from '../common/BudgetLogo'
-import SyncStatusIndicator from '../SyncStatusIndicator'
 import { defaultReferenceBudgets } from '../../data/referenceBudgets'
 import { toastWithClose } from '../../utils/toast'
 
@@ -232,11 +231,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               <MenuIcon />
             </IconButton>
           )}
-
-          {/* Indicateur de synchronisation */}
-          <Box sx={{ mr: 2 }}>
-            <SyncStatusIndicator />
-          </Box>
 
           {/* Menu Utilisateur */}
           <IconButton

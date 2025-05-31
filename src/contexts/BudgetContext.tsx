@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react'
 import { defaultReferenceBudgets, isCategoryCumulative } from '../data/referenceBudgets'
-import { hybridSync } from '../services/hybridSync'
+import { githubStorage, configureGitHubToken, AppData } from '../services/githubStorage'
 import { toastWithClose } from '../utils/toast'
 
 // Fonction utilitaire pour arrondir les nombres et éviter les problèmes de précision
@@ -111,54 +111,72 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
   // Données des dépenses - initialisées vides, chargées par le service hybride
   const [budgetExpenses, setBudgetExpenses] = useState<Record<string, Expense[]>>({})
 
-  // Charger les données depuis le service hybride après l'initialisation
+  // Configuration et initialisation au démarrage
   useEffect(() => {
-    const loadHybridData = async () => {
-      try {
-        const data = await hybridSync.loadData()
-        if (data) {
-          if (data.budgets && data.budgets.length > 0) {
-            setMonthlyBudgets(data.budgets)
-          }
-          if (data.expenses) {
-            setBudgetExpenses(data.expenses)
-          }
-          console.log('✅ Données chargées depuis le service hybride')
-        }
-      } catch (error) {
-        console.error('⚠️ Erreur lors du chargement hybride, utilisation des données par défaut:', error)
-      }
-    }
-
-    // Attendre un peu que le service hybride soit initialisé
-    setTimeout(loadHybridData, 100)
-  }, [])
-
-  // Configuration et initialisation du service hybride au démarrage
-  useEffect(() => {
-    const initHybridSync = async () => {
-      await hybridSync.init()
-      console.log('💾 Service de synchronisation hybride initialisé')
-    }
-    
-    initHybridSync()
+    console.log('🔍 Chargement initial des données...')
+    loadFromLocalStorage()
   }, [])
 
   // Sauvegarde automatique après chaque modification
-  const autoSave = async (newBudgets: MonthlyBudget[], newExpenses: Record<string, Expense[]>) => {
-    // Le service hybride gère automatiquement localStorage + GitHub
-    await hybridSync.saveData(newBudgets, newExpenses)
+  const autoSave = (newBudgets: MonthlyBudget[], newExpenses: Record<string, Expense[]>) => {
+    saveToLocalStorage(newBudgets, newExpenses)
+  }
+
+  // Fonction de sauvegarde dans localStorage
+  const saveToLocalStorage = (budgets: MonthlyBudget[], expenses: Record<string, Expense[]>) => {
+    try {
+      const dataToSave = {
+        budgets,
+        expenses,
+        timestamp: new Date().toISOString()
+      }
+      localStorage.setItem('budget-manager-data', JSON.stringify(dataToSave))
+      console.log('💾 Données sauvegardées en localStorage')
+    } catch (error) {
+      console.error('❌ Erreur lors de la sauvegarde localStorage:', error)
+    }
+  }
+
+  // Fonction de chargement depuis localStorage
+  const loadFromLocalStorage = () => {
+    try {
+      const saved = localStorage.getItem('budget-manager-data')
+      if (saved) {
+        const data = JSON.parse(saved)
+        
+        if (data.budgets && data.budgets.length > 0) {
+          setMonthlyBudgets(data.budgets)
+          console.log(`📋 ${data.budgets.length} budgets chargés depuis localStorage`)
+        }
+        
+        if (data.expenses && Object.keys(data.expenses).length > 0) {
+          const reconstructedExpenses: Record<string, Expense[]> = {}
+          for (const [budgetName, expenses] of Object.entries(data.expenses)) {
+            if (Array.isArray(expenses) && expenses.length > 0) {
+              reconstructedExpenses[budgetName] = (expenses as any[]).map(expense => ({
+                ...expense,
+                date: new Date(expense.date)
+              }))
+            }
+          }
+          setBudgetExpenses(reconstructedExpenses)
+          console.log(`💰 Dépenses chargées depuis localStorage`)
+        }
+      }
+    } catch (error) {
+      console.error('❌ Erreur lors du chargement localStorage:', error)
+    }
   }
 
   const loadFromGitHub = async () => {
     setIsLoading(true)
     try {
-      const data = await hybridSync.loadData()
+      const data = await githubStorage.loadData()
       
       if (data) {
         setMonthlyBudgets(data.budgets)
         setBudgetExpenses(data.expenses)
-        toastWithClose.success('Données chargées depuis le cloud')
+        toastWithClose.success('Données chargées depuis GitHub')
       }
     } catch (error) {
       console.error('Erreur lors du chargement:', error)
@@ -171,10 +189,18 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
   const saveToGitHub = async () => {
     setIsLoading(true)
     try {
-      await hybridSync.forceSyncToCloud(monthlyBudgets, budgetExpenses)
+      const dataToSave: AppData = {
+        budgets: monthlyBudgets,
+        expenses: budgetExpenses,
+        users: [], // Pas d'utilisateurs dans cette version simplifiée
+        lastUpdated: new Date().toISOString()
+      }
+      
+      await githubStorage.saveData(dataToSave)
+      toastWithClose.success('Données sauvegardées sur GitHub')
     } catch (error) {
       console.error('Erreur lors de la sauvegarde:', error)
-      toastWithClose.error('Erreur lors de la sauvegarde des données')
+      toastWithClose.error('Erreur lors de la sauvegarde')
     } finally {
       setIsLoading(false)
     }
