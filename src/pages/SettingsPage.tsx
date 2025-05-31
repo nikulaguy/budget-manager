@@ -101,6 +101,11 @@ const SettingsPage: React.FC = () => {
     localStorage.getItem('settings-emailNotifications') === 'true'
   )
   
+  // État pour le token GitHub
+  const [githubToken, setGithubToken] = useState(() => 
+    localStorage.getItem('github-token') || ''
+  )
+  
   // États des modales
   const [showEditProfile, setShowEditProfile] = useState(false)
   const [showExportDialog, setShowExportDialog] = useState(false)
@@ -157,6 +162,12 @@ const SettingsPage: React.FC = () => {
 
   const handleLoadFromGitHub = async () => {
     await loadFromGitHub()
+  }
+
+  // Fonction pour sauvegarder le token GitHub
+  const handleSaveGithubToken = () => {
+    localStorage.setItem('github-token', githubToken)
+    toastWithClose.success('Token GitHub sauvegardé avec succès')
   }
 
   // Sauvegarder les préférences dans localStorage
@@ -736,18 +747,43 @@ const SettingsPage: React.FC = () => {
                     />
                   </ListItem>
 
+                  {/* Champ pour le token GitHub */}
+                  <ListItem>
+                    <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      <TextField
+                        fullWidth
+                        label="Token GitHub"
+                        type="password"
+                        value={githubToken}
+                        onChange={(e) => setGithubToken(e.target.value)}
+                        placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                        helperText="Collez votre Personal Access Token GitHub ici"
+                        size="small"
+                      />
+                      <Button
+                        variant="contained"
+                        onClick={handleSaveGithubToken}
+                        disabled={!githubToken.trim()}
+                        size="small"
+                        sx={{ alignSelf: 'flex-start' }}
+                      >
+                        Sauvegarder le token
+                      </Button>
+                    </Box>
+                  </ListItem>
+
                   {/* Indicateur de statut GitHub */}
                   <ListItem>
                     <Alert 
-                      severity="success" 
+                      severity={githubToken ? "success" : "warning"} 
                       sx={{ width: '100%', mb: 1 }}
-                      icon={<CheckCircle />}
+                      icon={githubToken ? <CheckCircle /> : <CloudUpload />}
                     >
                       <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
-                        Configuration GitHub active
+                        {githubToken ? 'Configuration GitHub active' : 'Configuration GitHub requise'}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
-                        Repository: nikulaguy/budget-data
+                        {githubToken ? 'Repository: nikulaguy/budget-data' : 'Veuillez configurer votre token GitHub'}
                       </Typography>
                     </Alert>
                   </ListItem>
@@ -758,7 +794,7 @@ const SettingsPage: React.FC = () => {
                         variant="outlined"
                         startIcon={isLoading ? <CircularProgress size={16} /> : <CloudUpload />}
                         onClick={handleSaveToGitHub}
-                        disabled={isLoading}
+                        disabled={isLoading || !githubToken}
                         size="small"
                         sx={{ flex: 1 }}
                       >
@@ -768,7 +804,7 @@ const SettingsPage: React.FC = () => {
                         variant="outlined"
                         startIcon={isLoading ? <CircularProgress size={16} /> : <CloudDownload />}
                         onClick={handleLoadFromGitHub}
-                        disabled={isLoading}
+                        disabled={isLoading || !githubToken}
                         size="small"
                         sx={{ flex: 1 }}
                       >
