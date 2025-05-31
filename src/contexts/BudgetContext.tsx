@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, ReactNode, useEffect } from
 import { defaultReferenceBudgets, isCategoryCumulative } from '../data/referenceBudgets'
 import { githubStorage, configureGitHubToken, AppData } from '../services/githubStorage'
 import { toastWithClose } from '../utils/toast'
+import { useAuth } from './AuthContext'
 
 // Fonction utilitaire pour arrondir les nombres et éviter les problèmes de précision
 const roundToTwo = (num: number): number => {
@@ -77,6 +78,7 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
   const [currentMonth, setCurrentMonth] = useState<number>(new Date().getMonth() + 1)
   const [currentYear, setCurrentYear] = useState<number>(new Date().getFullYear())
   const [isLoading, setIsLoading] = useState(false)
+  const [dataLoaded, setDataLoaded] = useState(false)
   
   // États pour les modales globales
   const [globalAddExpenseOpen, setGlobalAddExpenseOpen] = useState(false)
@@ -84,12 +86,9 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
   const [globalAddCategoryOpen, setGlobalAddCategoryOpen] = useState(false)
   const [selectedBudgetForExpense, setSelectedBudgetForExpense] = useState<string | null>(null)
 
-  // Données des budgets mensuels - chargés depuis le service hybride ou défauts
-  const [monthlyBudgets, setMonthlyBudgets] = useState<MonthlyBudget[]>(() => {
-    console.log('🔍 Initialisation des budgets...')
-    
-    // Création des budgets par défaut
-    const defaultBudgets = defaultReferenceBudgets.map((budget, index) => ({
+  // Fonction pour créer les budgets par défaut
+  const createDefaultBudgets = (): MonthlyBudget[] => {
+    return defaultReferenceBudgets.map((budget, index) => ({
       id: `budget-${index}`,
       name: budget.name,
       referenceValue: budget.value,
@@ -98,17 +97,12 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
       category: budget.category,
       percentage: 0
     }))
-    
-    console.log('📋 Budgets par défaut créés:', {
-      total: defaultBudgets.length,
-      categories: [...new Set(defaultBudgets.map((b: MonthlyBudget) => b.category))],
-      epargneCount: defaultBudgets.filter((b: MonthlyBudget) => b.category === 'Épargne').length
-    })
-    
-    return defaultBudgets
-  })
+  }
 
-  // Données des dépenses - initialisées vides, chargées par le service hybride
+  // Données des budgets mensuels - initialisées vides, chargées au démarrage
+  const [monthlyBudgets, setMonthlyBudgets] = useState<MonthlyBudget[]>([])
+
+  // Données des dépenses - initialisées vides, chargées au démarrage
   const [budgetExpenses, setBudgetExpenses] = useState<Record<string, Expense[]>>({})
 
   // Configuration et initialisation au démarrage
@@ -117,10 +111,12 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
     loadFromLocalStorage()
   }, [])
 
-  // Sauvegarde automatique après chaque modification
-  const autoSave = (newBudgets: MonthlyBudget[], newExpenses: Record<string, Expense[]>) => {
-    saveToLocalStorage(newBudgets, newExpenses)
-  }
+  // Sauvegarde automatique après chaque modification (seulement si les données sont chargées)
+  useEffect(() => {
+    if (dataLoaded && monthlyBudgets.length > 0) {
+      saveToLocalStorage(monthlyBudgets, budgetExpenses)
+    }
+  }, [monthlyBudgets, budgetExpenses, dataLoaded])
 
   // Fonction de sauvegarde dans localStorage
   const saveToLocalStorage = (budgets: MonthlyBudget[], expenses: Record<string, Expense[]>) => {
@@ -128,6 +124,8 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
       const dataToSave = {
         budgets,
         expenses,
+        currentMonth,
+        currentYear,
         timestamp: new Date().toISOString()
       }
       localStorage.setItem('budget-manager-data', JSON.stringify(dataToSave))
@@ -143,10 +141,14 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
       const saved = localStorage.getItem('budget-manager-data')
       if (saved) {
         const data = JSON.parse(saved)
+        console.log('📋 Données trouvées dans localStorage:', data)
         
         if (data.budgets && data.budgets.length > 0) {
           setMonthlyBudgets(data.budgets)
           console.log(`📋 ${data.budgets.length} budgets chargés depuis localStorage`)
+        } else {
+          console.log('📋 Aucun budget trouvé, création des budgets par défaut')
+          setMonthlyBudgets(createDefaultBudgets())
         }
         
         if (data.expenses && Object.keys(data.expenses).length > 0) {
@@ -160,11 +162,25 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
             }
           }
           setBudgetExpenses(reconstructedExpenses)
-          console.log(`💰 Dépenses chargées depuis localStorage`)
+          console.log(`💰 Dépenses chargées depuis localStorage:`, reconstructedExpenses)
         }
+
+        // Charger la date actuelle si sauvegardée
+        if (data.currentMonth && data.currentYear) {
+          setCurrentMonth(data.currentMonth)
+          setCurrentYear(data.currentYear)
+        }
+      } else {
+        console.log('📋 Aucune donnée trouvée, création des budgets par défaut')
+        setMonthlyBudgets(createDefaultBudgets())
       }
+      
+      setDataLoaded(true)
     } catch (error) {
       console.error('❌ Erreur lors du chargement localStorage:', error)
+      console.log('📋 Fallback: création des budgets par défaut')
+      setMonthlyBudgets(createDefaultBudgets())
+      setDataLoaded(true)
     }
   }
 
@@ -229,10 +245,10 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
   const addExpense = (budgetName: string, expense: Omit<Expense, 'id'>) => {
     const newExpense: Expense = {
       ...expense,
-      id: Date.now().toString()
+      id: `expense-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
     }
 
-    // Ajouter la dépense à la liste
+    // Ajouter la dépense
     const newExpenses = {
       ...budgetExpenses,
       [budgetName]: [...(budgetExpenses[budgetName] || []), newExpense]
@@ -256,9 +272,6 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
       return budget
     })
     setMonthlyBudgets(newBudgets)
-
-    // Sauvegarde automatique
-    autoSave(newBudgets, newExpenses)
     
     console.log('💰 Dépense ajoutée:', expense.amount, '€ pour', budgetName)
   }
@@ -292,9 +305,6 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
     })
     setMonthlyBudgets(newBudgets)
 
-    // Sauvegarde automatique
-    autoSave(newBudgets, newExpenses)
-
     return expense
   }
 
@@ -319,15 +329,11 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
       return budget
     })
     setMonthlyBudgets(newBudgets)
-
-    // Sauvegarde automatique
-    autoSave(newBudgets, newExpenses)
   }
 
   const resetAllBudgets = () => {
     // Supprimer toutes les dépenses de tous les budgets
-    const newExpenses = {}
-    setBudgetExpenses(newExpenses)
+    setBudgetExpenses({})
 
     // Remettre tous les budgets à leurs valeurs de référence
     const newBudgets = monthlyBudgets.map(budget => ({
@@ -337,29 +343,16 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
       percentage: 0
     }))
     setMonthlyBudgets(newBudgets)
-
-    // Sauvegarde automatique
-    autoSave(newBudgets, newExpenses)
   }
 
   const resetToDefaults = () => {
     console.log('🔄 Réinitialisation complète vers les budgets par défaut')
     
     // Nettoyer complètement localStorage
-    localStorage.removeItem('budget-app-budgets')
-    localStorage.removeItem('budget-app-expenses')
-    localStorage.removeItem('budget-app-last-updated')
+    localStorage.removeItem('budget-manager-data')
     
     // Créer les budgets par défaut
-    const defaultBudgets = defaultReferenceBudgets.map((budget, index) => ({
-      id: `budget-${index}`,
-      name: budget.name,
-      referenceValue: budget.value,
-      spent: 0,
-      remaining: budget.value,
-      category: budget.category,
-      percentage: 0
-    }))
+    const defaultBudgets = createDefaultBudgets()
     
     // Remettre à zéro les dépenses
     const emptyExpenses = {}
@@ -367,9 +360,6 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
     // Mettre à jour les states
     setMonthlyBudgets(defaultBudgets)
     setBudgetExpenses(emptyExpenses)
-    
-    // Sauvegarder immédiatement
-    autoSave(defaultBudgets, emptyExpenses)
     
     console.log('✅ Réinitialisation terminée:', {
       budgets: defaultBudgets.length,
@@ -415,15 +405,11 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
     setMonthlyBudgets(newBudgets)
 
     // Supprimer toutes les dépenses du mois précédent
-    const newExpenses = {}
-    setBudgetExpenses(newExpenses)
+    setBudgetExpenses({})
 
     // Mettre à jour la date
     setCurrentMonth(nextDate.getMonth() + 1) // Reconvertir en 1-based
     setCurrentYear(nextDate.getFullYear())
-
-    // Sauvegarde automatique
-    autoSave(newBudgets, newExpenses)
 
     toastWithClose.success('Passage au mois suivant effectué avec report des budgets cumulatifs')
   }
