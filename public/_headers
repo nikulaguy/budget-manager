@@ -19,8 +19,10 @@
 /manifest.webmanifest
   Content-Type: application/manifest+json
 
-X-Frame-Options: DENY
-X-XSS-Protection: 1; mode=block
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS
+Access-Control-Allow-Headers: *
+X-Frame-Options: SAMEORIGIN
 X-Content-Type-Options: nosniff
 Referrer-Policy: strict-origin-when-cross-origin
 Content-Security-Policy: default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: chrome-extension:; script-src 'self' 'unsafe-inline' 'unsafe-eval' chrome-extension:; style-src 'self' 'unsafe-inline' chrome-extension:; img-src 'self' data: https: chrome-extension:; font-src 'self' data: chrome-extension:; connect-src 'self' https://api.github.com chrome-extension:; 
