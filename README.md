@@ -202,4 +202,8 @@ Les contributions sont les bienvenues ! Veuillez :
 
 ## 📞 Support
 
-Pour toute question ou problème, veuillez ouvrir une issue sur GitHub. 
+Pour toute question ou problème, veuillez ouvrir une issue sur GitHub.
+
+## Tests GitHub Actions
+
+Les workflows GitHub Actions sont maintenant configurés pour se déclencher automatiquement. 
