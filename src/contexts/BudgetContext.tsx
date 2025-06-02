@@ -1,8 +1,7 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react'
 import { defaultReferenceBudgets, isCategoryCumulative } from '../data/referenceBudgets'
-import { githubStorage, configureGitHubToken, AppData } from '../services/githubStorage'
+import { githubStorage, AppData } from '../services/githubStorage'
 import { toastWithClose } from '../utils/toast'
-import { useAuth } from './AuthContext'
 
 // Fonction utilitaire pour arrondir les nombres et éviter les problèmes de précision
 const roundToTwo = (num: number): number => {
@@ -105,18 +104,19 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
   // Données des dépenses - initialisées vides, chargées au démarrage
   const [budgetExpenses, setBudgetExpenses] = useState<Record<string, Expense[]>>({})
 
-  // Configuration et initialisation au démarrage
+  // useEffect pour charger les données au démarrage
   useEffect(() => {
-    console.log('🔍 Chargement initial des données...')
+    console.log('🚀 Chargement initial des données...')
     loadFromLocalStorage()
   }, [])
 
-  // Sauvegarde automatique après chaque modification (seulement si les données sont chargées)
+  // useEffect pour sauvegarder automatiquement les données quand elles changent
   useEffect(() => {
-    if (dataLoaded && monthlyBudgets.length > 0) {
+    if (dataLoaded) {
+      console.log('💾 Sauvegarde automatique déclenchée')
       saveToLocalStorage(monthlyBudgets, budgetExpenses)
     }
-  }, [monthlyBudgets, budgetExpenses, dataLoaded])
+  }, [monthlyBudgets, budgetExpenses, currentMonth, currentYear, dataLoaded])
 
   // Fonction de sauvegarde dans localStorage
   const saveToLocalStorage = (budgets: MonthlyBudget[], expenses: Record<string, Expense[]>) => {
