@@ -55,7 +55,7 @@ import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
 import { useAuth } from '../contexts/AuthContext'
-import { useBudget } from '../contexts/BudgetContext'
+import { useBudget as useBudgetContext } from '../contexts/BudgetContext'
 import { UserInvitation } from '../types'
 import { defaultReferenceBudgets, defaultCategories } from '../data/referenceBudgets'
 
@@ -89,7 +89,7 @@ const SettingsPage: React.FC = () => {
     loadFromGitHub, 
     resetToDefaults,
     isLoading 
-  } = useBudget()
+  } = useBudgetContext()
   
   // États des paramètres (maintenant persistants dans localStorage)
   const [notifications, setNotifications] = useState(() => 
